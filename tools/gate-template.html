@@ -6,7 +6,12 @@
 <meta name="theme-color" content="#000000">
 <meta name="robots" content="noindex,nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Free AI">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Free AI Chat</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -90,6 +95,7 @@ $('f').addEventListener('submit',async e=>{
   }
 });
 if(!window.crypto||!crypto.subtle){ $('gate').hidden=false; $('err').textContent='This browser can’t unlock the site (needs HTTPS and Web Crypto).'; return; }
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 tryRemembered().then(ok=>{ if(!ok){ $('gate').hidden=false; setTimeout(()=>$('pw').focus(),100); } });
 })();
 </script>

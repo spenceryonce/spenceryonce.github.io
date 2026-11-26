@@ -428,7 +428,7 @@ function paintPicker(){
       if(filter!=='all'&&!ms.length) continue;
       const dot=st==='ok'?'ok':st==='bad'?'bad':st==='wait'?'wait':'';
       const lim=shown[p.id]?ms.length:8;
-      h+=`<div class="pgroup"><div class="phd"><div class="mono" style="background:${p.color}">${esc(p.name[0])}</div><div class="lbl"><b>${esc(p.name)} <span class="dot ${dot}"></span></b><small>${esc(p.note||'')}${st==='wait'?' · loading…':''}${p.testing?' · testing '+esc(p.testing):''}${hid?` · ${hid} hidden`:''}</small></div>${p.type!=='puter'&&ms.length?`<button class="chip" data-test="${esc(p.id)}">${p.testing?'Testing…':'Test'}</button>`:''}</div>
+      h+=`<div class="pgroup"><div class="phd"><div class="mono" style="background:${p.color}">${esc(p.name[0])}</div><div class="lbl"><b>${esc(p.name)} <span class="dot ${dot}"></span></b><small>${esc(p.note||'')}${st==='wait'?' · loading…':''}${p.testing?' · testing '+esc(p.testing):''}${hid?` · ${hid} hidden`:''}</small></div>${p.type==='puter'?(puterSignedIn()?'<span class="tag g">Signed in</span>':'<button class="chip" data-puter-signin>Sign in</button>'):ms.length?`<button class="chip" data-test="${esc(p.id)}">${p.testing?'Testing…':'Test'}</button>`:''}</div>
         <div class="card">${ms.length?ms.slice(0,lim).map(m=>rowHTML(p,m)).join('')+(ms.length>lim?`<button class="more" data-showall="${esc(p.id)}">Show all ${ms.length}</button>`:''):`<div class="emptyp">${st==='wait'?'Loading models…':hid?'Every model failed recently. Settings → Unhide failed models.':'No models available right now.'}</div>`}</div></div>`;
     }
   }
@@ -441,6 +441,7 @@ $('provList').addEventListener('click',e=>{
   const a=e.target.closest('[data-showall]'); if(a){ shown[a.dataset.showall]=1; paintPicker(); return; }
   const b=e.target.closest('[data-p]'); if(!b) return;
   sel={p:b.dataset.p,m:b.dataset.m}; store.set('sel',sel); paintTitle(); closeAll();
+  if(sel.p==='puter') loadPuter().then(()=>{ if(!puterSignedIn()) toast('Puter needs a free sign-in. Tap Sign in in the model list.'); }).catch(()=>{});
 });
 $('provList').addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.matches('.mrow')) e.target.click(); });
 
@@ -462,7 +463,7 @@ function paintPresets(){ $('presets').innerHTML=Object.entries(PRESETS).map(([k,
 function paintSysBox(){ $('sSys').value=basePrompt(); $('sCount').textContent=`${$('sSys').value.length} characters`; $('sPrev').textContent=systemPrompt(); }
 function paintSettingsProviders(){
   if(!$('settings').classList.contains('on')) return;
-  $('sProv').innerHTML=providers.map(p=>{ const st=status[p.id]; const d=st==='ok'?'ok':st==='bad'?'bad':st==='wait'?'wait':''; return `<div class="item"><div class="mono" style="background:${p.color}">${esc(p.name[0])}</div><div class="lbl"><b>${esc(p.name)} <span class="dot ${d}"></span></b><small>${esc(p.note||'')} · ${live(p).length} models</small></div><label class="sw"><input type="checkbox" data-pon="${esc(p.id)}"${enabled(p)?' checked':''} aria-label="Enable ${esc(p.name)}"><span></span></label></div>`; }).join('');
+  $('sProv').innerHTML=providers.map(p=>{ const st=status[p.id]; const d=st==='ok'?'ok':st==='bad'?'bad':st==='wait'?'wait':''; return `<div class="item"><div class="mono" style="background:${p.color}">${esc(p.name[0])}</div><div class="lbl"><b>${esc(p.name)} <span class="dot ${d}"></span></b><small>${esc(p.note||'')} · ${live(p).length} models</small></div>${p.type==='puter'?(puterSignedIn()?'<button class="chip" data-puter-signout>Sign out</button>':'<button class="chip on" data-puter-signin>Sign in</button>'):''}<label class="sw"><input type="checkbox" data-pon="${esc(p.id)}"${enabled(p)?' checked':''} aria-label="Enable ${esc(p.name)}"><span></span></label></div>`; }).join('');
 }
 function tempLabel(v){ return v<.35?'Precise':v<.9?'Balanced':v<1.2?'Creative':'Wild'; }
 function openSettings(){
@@ -470,6 +471,7 @@ function openSettings(){
   $('sTemp').value=settings.temp; $('sTempV').textContent=`${tempLabel(settings.temp)} · ${(+settings.temp).toFixed(1)}`;
   $('sThink').checked=settings.think; $('sFall').checked=settings.fall;
   for(const b of $('sLen').children) b.classList.toggle('on',b.dataset.v===settings.len);
+  loadPuter().then(paintSettingsProviders).catch(()=>{});
   paintPresets(); paintSysBox(); open('settings'); paintSettingsProviders(); providers.filter(enabled).forEach(loadModels);
 }
 $('presets').addEventListener('click',e=>{ const b=e.target.closest('[data-k]'); if(!b) return; settings.preset=b.dataset.k; saveSettings(); paintPresets(); paintSysBox(); });
@@ -501,7 +503,7 @@ $('scrim').onclick=closeAll;
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
 $('menuBtn').onclick=()=>{ paintHist(); open('drawer'); };
-$('modelBtn').onclick=()=>{ query=''; $('q').value=''; paintFilters(); open('pick'); paintPicker(); providers.filter(enabled).forEach(loadModels); };
+$('modelBtn').onclick=()=>{ if(enabled(prov('puter'))) loadPuter().then(paintPicker).catch(()=>{}); query=''; $('q').value=''; paintFilters(); open('pick'); paintPicker(); providers.filter(enabled).forEach(loadModels); };
 $('setBtn').onclick=openSettings; $('dSet').onclick=openSettings; $('xSet').onclick=openSettings;
 function popMenu(menu,btn,below){
   const r=btn.getBoundingClientRect(), m=$(menu);
@@ -537,10 +539,10 @@ $('file').onchange=async()=>{ for(const f of $('file').files){ if(f.size>400000)
 $('mImg').onclick=()=>{ closeAll(); imgMode=!imgMode; paintAttach(); $('input').focus(); };
 function paintAttach(){
   const ip=IMG[settings.img]?settings.img:'pollinations';
-  $('attach').innerHTML=(imgMode?'<button class="chip on" data-x="img">Image ✕</button>'+Object.entries(IMG).map(([k,v])=>`<button class="chip${ip===k?' on':''}" data-ip="${k}" title="${esc(v.note)}">${v.name}</button>`).join(''):'')+files.map((f,i)=>`<button class="chip" data-x="${i}">${esc(f.name)} ✕</button>`).join('');
+  $('attach').innerHTML=(imgMode?'<button class="chip on" data-x="img">Image ✕</button>'+Object.entries(IMG).map(([k,v])=>`<button class="chip${ip===k?' on':''}" data-ip="${k}" title="${esc(v.note)}">${v.name}</button>`).join('')+(ip==='puter'&&!puterSignedIn()?SIGNIN_BTN:''):'')+files.map((f,i)=>`<button class="chip" data-x="${i}">${esc(f.name)} ✕</button>`).join('');
   $('input').placeholder=imgMode?'Describe an image':(cur&&cur.messages.length?"What's next?":'Ask Free AI');
 }
-$('attach').addEventListener('click',e=>{ const ipb=e.target.closest('[data-ip]'); if(ipb){ settings.img=ipb.dataset.ip; store.set('settings2',settings); paintAttach(); toast(IMG[settings.img].note); return; } const b=e.target.closest('[data-x]'); if(!b) return; if(b.dataset.x==='img') imgMode=false; else files.splice(+b.dataset.x,1); paintAttach(); paintGo(); });
+$('attach').addEventListener('click',e=>{ const ipb=e.target.closest('[data-ip]'); if(ipb){ settings.img=ipb.dataset.ip; store.set('settings2',settings); if(settings.img==='puter') loadPuter().then(paintAttach).catch(()=>{}); paintAttach(); toast(IMG[settings.img].note); return; } const b=e.target.closest('[data-x]'); if(!b) return; if(b.dataset.x==='img') imgMode=false; else files.splice(+b.dataset.x,1); paintAttach(); paintGo(); });
 
 /* ---------- input ---------- */
 const input=$('input');
@@ -602,7 +604,7 @@ function paintTail(){ const t=$('tail'); if(t) t.innerHTML=busy?'':'<p class="di
 function msgHTML(m,i){
   if(m.role==='user') return `<div class="user" data-i="${i}"><div class="bubble">${esc(m.display||m.content)}</div></div>`;
   const last=i===cur.messages.length-1, {think,text}=splitThink(m);
-  const acts=m.pending?'':`<div class="acts">${text?`<button class="icon" data-act="copy" data-i="${i}" aria-label="Copy">${IC.copy}</button><button class="icon" data-act="share" data-i="${i}" aria-label="Share">${IC.share}</button><button class="icon" data-act="speak" data-i="${i}" aria-label="Read aloud">${IC.speak}</button>`:''}${last?`<button class="icon" data-act="regen" aria-label="${m.error?'Retry':'Regenerate'}">${IC.regen}</button>`:''}${m.error?`<button class="chip" data-act="switch" style="margin:4px 6px">Switch model</button>`:''}</div>`;
+  const acts=m.pending?'':`<div class="acts">${text?`<button class="icon" data-act="copy" data-i="${i}" aria-label="Copy">${IC.copy}</button><button class="icon" data-act="share" data-i="${i}" aria-label="Share">${IC.share}</button><button class="icon" data-act="speak" data-i="${i}" aria-label="Read aloud">${IC.speak}</button>`:''}${last?`<button class="icon" data-act="regen" aria-label="${m.error?'Retry':'Regenerate'}">${IC.regen}</button>`:''}${m.needsPuter&&!puterSignedIn()?`<span style="margin:4px 6px">${SIGNIN_BTN}</span>`:''}${m.error?`<button class="chip" data-act="switch" style="margin:4px 6px">${m.imgPrompt?'Other generator':'Switch model'}</button>`:''}</div>`;
   const showThink=think&&settings.think;
   return `<div class="resp" data-i="${i}">
     <div class="meta"><div class="spark sm${m.pending?' spin':''}"></div>${esc(m.via||'')}</div>
@@ -629,7 +631,7 @@ $('chat').addEventListener('click',async e=>{
   else if(a==='share'){ const t=splitThink(m).text; if(navigator.share){ try{ await navigator.share({text:t}); }catch{} } else { try{ await navigator.clipboard.writeText(t); toast('Copied to share'); }catch{} } }
   else if(a==='speak'){ if(!window.speechSynthesis){ toast('Read aloud is not supported here'); return; } if(speechSynthesis.speaking){ speechSynthesis.cancel(); return; } speechSynthesis.speak(new SpeechSynthesisUtterance(splitThink(m).text.replace(/```[\s\S]*?```/g,' code block ').replace(/[#*_`>|]/g,' '))); }
   else if(a==='regen'){ if(busy) return; const last=cur.messages.pop(); render(); if(last&&last.imgPrompt) makeImage(last.imgPrompt,last.imgProv); else run(); }
-  else if(a==='switch'){ $('modelBtn').click(); }
+  else if(a==='switch'){ if(m&&m.imgPrompt||cur.messages[cur.messages.length-1]?.imgPrompt){ imgMode=true; paintAttach(); toast('Pick a generator above the input'); } else $('modelBtn').click(); }
 });
 
 /* ---------- sending ---------- */
@@ -662,7 +664,7 @@ async function makeImage(prompt,provId){
     else if(pid==='horde') m.image=await imgHorde(prompt,sig,t=>{ m.status=t; paintMsg(i); });
     else m.image=await imgPuter(prompt,sig);
   }catch(e){
-    m.image='';
+    m.image=''; if(e&&e.needsPuter) m.needsPuter=true;
     m.error=sig.aborted?'Stopped.':`${IMG[pid].name}: ${e&&e.message?e.message:e}. Try again, or switch generator with the chips above the input.`;
   }
   m.pending=false; m.status=''; busy=null; paintMsg(i); paintGo(); save();
@@ -704,6 +706,7 @@ async function imgHorde(prompt,sig,onStatus){
 }
 async function imgPuter(prompt,sig){
   await loadPuter();
+  if(!puterSignedIn()) throw NEEDS_PUTER();
   const el=await raceAbort(puter.ai.txt2img(prompt),sig);
   const src=el&&(el.src||el.url||(typeof el==='string'?el:''));
   if(!src) throw new Error('returned no image');
@@ -730,7 +733,7 @@ async function run(){
   busy=new AbortController(); paintMsg(idx); paintGo();
   const msgs=apiMessages(), errors=[], list=candidates(), wanted=list[0]&&list[0][1];
   let raf=0; const tick=()=>{ if(!raf) raf=requestAnimationFrame(()=>{ raf=0; paintMsg(idx); }); };
-  let ok=false;
+  let ok=false, needP=false;
   for(const [p,model] of list){
     if(busy.signal.aborted) break;
     m.via=`${p.name} · ${pretty(model)}`; m.content=''; m.reasoning=''; m.status=p.id==='horde'?'Waiting for a volunteer GPU…':'Working on it…'; tick();
@@ -749,11 +752,12 @@ async function run(){
       if(m.content){ ok=true; break; }
       if(timedOut){ errors.push(`${p.name} · ${pretty(model)}: no reply in ${p.timeout||45}s`); continue; }
       if(modelGone(err)) markDead(p.id,model); else if(err.status===429) stat(p.id,model,{rl:1});
+      if(err&&err.needsPuter) needP=true;
       errors.push(`${p.name} · ${pretty(model)}: ${explain(err)}`);
     }finally{ clearTimeout(timer); busy.signal.removeEventListener('abort',onAbort); }
   }
   if(!list.length) m.error='No working models right now. Open the model menu, or Settings → Unhide failed models.';
-  else if(!ok){ m.error=errors.join('\n'); m.via=''; }
+  else if(!ok){ m.error=errors.join('\n'); m.via=''; m.needsPuter=needP; }
   m.pending=false; m.status=''; busy=null; cancelAnimationFrame(raf); paintMsg(idx); paintGo(); paintTitle(); save();
 }
 
@@ -776,6 +780,26 @@ function explain(e){
   if(e instanceof TypeError) return 'blocked by the browser (CORS) or offline';
   return (e&&e.message?e.message:String(e)).slice(0,160)+(modelGone(e)?' (hidden for 24h)':'');
 }
+
+/* ---------- Puter sign-in (popup must open directly from a tap) ---------- */
+function puterSignedIn(){ try{ return !!(window.puter&&puter.auth&&puter.auth.isSignedIn()); }catch{ return false; } }
+const SIGNIN_BTN='<button class="chip on" data-puter-signin>Sign in to Puter</button>';
+function puterSignIn(){
+  if(!window.puter||!puter.auth){ toast('Loading Puter… tap Sign in again in a second'); loadPuter().catch(()=>toast('Could not load Puter')); return; }
+  let pr;
+  try{ pr=puter.auth.signIn({attempt_temp_user_creation:true}); }catch(e){ toast('Sign-in could not open'); return; }
+  Promise.resolve(pr).then(()=>{ toast('Signed in to Puter'); onPuterAuth(); }).catch(e=>{
+    const c=e&&(e.error||e.code||e.message);
+    toast(c==='popup_blocked'?'Safari blocked the sign-in window. Settings → Safari → turn off Block Pop-ups, then tap again.':c==='auth_window_closed'?'Sign-in cancelled':'Sign-in failed: '+((e&&(e.msg||e.message))||c||'unknown error'));
+  });
+}
+function onPuterAuth(){
+  paintPicker(); paintSettingsProviders(); paintAttach();
+  if(cur&&!busy){ const last=cur.messages[cur.messages.length-1]; if(last&&last.needsPuter){ cur.messages.pop(); render(); if(last.imgPrompt) makeImage(last.imgPrompt,last.imgProv); else run(); return; } }
+  if(cur) render();
+}
+document.addEventListener('click',e=>{ if(e.target.closest('[data-puter-signin]')){ e.stopPropagation(); puterSignIn(); } if(e.target.closest('[data-puter-signout]')){ e.stopPropagation(); try{ puter.auth.signOut(); toast('Signed out of Puter'); }catch{} setTimeout(()=>{ paintSettingsProviders(); paintPicker(); },300); } },true);
+const NEEDS_PUTER=()=>Object.assign(new Error('sign in to Puter to use it'),{needsPuter:true});
 
 /* ---------- transports ---------- */
 function raceAbort(pr,signal){ return new Promise((ok,bad)=>{ if(signal.aborted) return bad(new DOMException('aborted','AbortError')); const f=()=>bad(new DOMException('aborted','AbortError')); signal.addEventListener('abort',f,{once:true}); pr.then(v=>{signal.removeEventListener('abort',f);ok(v)},e=>{signal.removeEventListener('abort',f);bad(e)}); }); }
@@ -830,12 +854,14 @@ let puterP=null;
 function loadPuter(){ if(window.puter) return Promise.resolve(); return puterP||=new Promise((ok,bad)=>{ const s=document.createElement('script'); s.src='https://js.puter.com/v2/'; s.onload=ok; s.onerror=()=>{ puterP=null; bad(new Error('could not load Puter.js')); }; document.head.appendChild(s); }); }
 async function callPuter(model,messages,onDelta,signal){
   await loadPuter();
+  if(!puterSignedIn()) throw NEEDS_PUTER();
   const r=await puter.ai.chat(messages,{model,stream:true});
   if(r&&typeof r[Symbol.asyncIterator]==='function'){ for await(const part of r){ if(signal&&signal.aborted) break; onDelta(part?.text||'',part?.reasoning||''); } }
   else onDelta(typeof r==='string'?r:(r?.message?.content?.[0]?.text||r?.message?.content||String(r)),'');
 }
 
 paintAvatar(); paintTitle(); render();
+if(sel.p==='puter'||settings.img==='puter') loadPuter().catch(()=>{});
 providers.filter(p=>enabled(p)&&p.type!=='g4f').forEach(loadModels);
 }
 </script>

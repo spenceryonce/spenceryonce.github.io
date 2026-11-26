@@ -5,7 +5,7 @@ GitHub token (Authorization: Bearer ...). The server checks it against the
 GitHub API and only lets the owner in. It also stops its own codespace when it
 has been idle for a while, so a forgotten session can't keep running.
 """
-import asyncio, base64, hashlib, mimetypes, os, shlex, subprocess, threading, time
+import asyncio, base64, hashlib, html as htmllib, mimetypes, os, re, subprocess, threading, time, traceback
 from pathlib import Path
 from urllib.parse import quote
 
@@ -58,6 +58,10 @@ async def guard(request: Request, call_next):
     state["inflight"] += 1
     try:
         return await call_next(request)
+    except Exception as e:  # never let a crash reach the browser without CORS headers
+        traceback.print_exc()
+        return JSONResponse({"detail": f"server error: {type(e).__name__}: {str(e)[:300]}"}, status_code=500,
+                            headers={"Access-Control-Allow-Origin": request.headers.get("origin", "*")})
     finally:
         state["inflight"] -= 1
         state["last"] = time.time()
@@ -197,17 +201,74 @@ async def download(path: str):
 async def search(body: dict):
     q = body.get("query") or ""
     n = max(1, min(int(body.get("max_results") or 8), 20))
+    news = bool(body.get("news"))
+    tl = body.get("recency") if body.get("recency") in ("d", "w", "m", "y") else None
 
     def go():
         from ddgs import DDGS
-        with DDGS() as d:
-            return list(d.text(q, max_results=n))
+        d = DDGS()
+        try:
+            rows = d.news(q, max_results=n, timelimit=tl) if news else d.text(q, max_results=n, timelimit=tl)
+        except Exception as e:
+            if "no results" in str(e).lower():
+                return []
+            raise
+        return list(rows or [])
 
     try:
         rows = await asyncio.to_thread(go)
     except Exception as e:
         raise HTTPException(502, f"search failed: {e}")
-    return {"query": q, "results": [{"title": r.get("title"), "url": r.get("href") or r.get("url"), "snippet": r.get("body")} for r in rows]}
+    return {"query": q, "results": [{"title": r.get("title"), "url": r.get("href") or r.get("url"), "snippet": r.get("body") or r.get("excerpt"),
+                                     "date": r.get("date"), "source": r.get("source")} for r in rows]}
+
+
+# ---------- plain page reader (no browser needed) ----------
+UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36"
+
+
+def html_to_text(h: str):
+    title = htmllib.unescape((re.search(r"<title[^>]*>(.*?)</title>", h, re.S | re.I) or [None, ""])[1]).strip()
+    links = [{"text": htmllib.unescape(re.sub(r"<[^>]+>", "", t)).strip()[:80], "href": u}
+             for u, t in re.findall(r'<a[^>]+href="(https?://[^"]+)"[^>]*>(.*?)</a>', h, re.S | re.I)][:60]
+    h = re.sub(r"(?is)<(head|script|style|noscript|svg|nav|footer|header|form)[^>]*>.*?</\1>", " ", h)
+    h = re.sub(r"(?i)<br\s*/?>|</(p|div|li|h[1-6]|tr|section|article)>", "\n", h)
+    t = htmllib.unescape(re.sub(r"<[^>]+>", " ", h))
+    t = re.sub(r"[ \t\r\f\v]+", " ", t)
+    t = re.sub(r"\n\s*\n+", "\n\n", t).strip()
+    return title, t, [l for l in links if l["text"]]
+
+
+async def fetch_text(url: str):
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True, headers={"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"}) as c:
+        r = await c.get(url)
+    ct = r.headers.get("content-type", "")
+    if "html" in ct or not ct:
+        title, text, links = html_to_text(r.text)
+    else:
+        title, text, links = url, r.text, []
+    return {"url": str(r.url), "status": r.status_code, "title": title, "text": clip(text, 15000), "links": links}
+
+
+@app.post("/fetch")
+async def fetch(body: dict):
+    try:
+        return await fetch_text(body.get("url", ""))
+    except Exception as e:
+        raise HTTPException(502, f"could not load page: {str(e)[:300]}")
+
+
+@app.get("/logs")
+async def logs():
+    out = {}
+    for name in ("/tmp/computer-start.log", "/tmp/computer-setup.log", "/tmp/computer.log"):
+        try:
+            out[name] = clip(Path(name).read_text(errors="replace")[-8000:], 8000)
+        except Exception as e:
+            out[name] = f"(unavailable: {e})"
+    return out
 
 
 # ---------- browser (one persistent Chromium tab) ----------
@@ -233,7 +294,14 @@ async def page():
 async def browser(body: dict):
     action = body.get("action", "read")
     async with _browser_lock:
-        pg = await page()
+        try:
+            pg = await page()
+        except Exception as e:
+            if action == "goto" and body.get("url"):
+                r = await fetch_text(body["url"])
+                r.update(screenshot=None, note=f"Chromium unavailable ({str(e)[:120]}); fetched the page without a browser.")
+                return r
+            raise HTTPException(503, f"Chromium is not available yet ({str(e)[:200]}). Use read_url instead.")
         try:
             if action == "goto":
                 url = body.get("url", "")
@@ -269,6 +337,13 @@ async def browser(body: dict):
         except HTTPException:
             raise
         except Exception as e:
+            if action == "goto" and body.get("url"):
+                try:
+                    r = await fetch_text(body["url"])
+                    r.update(screenshot=None, note=f"Browser could not load it ({str(e)[:120]}); fetched without a browser.")
+                    return r
+                except Exception:
+                    pass
             raise HTTPException(502, f"browser {action} failed: {str(e)[:300]}")
         text = await pg.evaluate("() => document.body ? document.body.innerText : ''")
         links = await pg.evaluate("""() => Array.from(document.querySelectorAll('a[href]')).slice(0,60)

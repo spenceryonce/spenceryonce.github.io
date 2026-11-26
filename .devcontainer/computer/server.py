@@ -19,10 +19,11 @@ HOME.mkdir(parents=True, exist_ok=True)
 OWNER = (os.environ.get("GITHUB_USER") or "").lower()
 CODESPACE = os.environ.get("CODESPACE_NAME", "")
 ORIGINS = os.environ.get("ALLOWED_ORIGINS", "https://spencie.me,https://spenceryonce.github.io,http://localhost:8000").split(",")
+SERVER_VERSION = "2026.11.26-4"
 STARTED = time.time()
 MAX_OUT = 20000
 
-state = {"last": time.time(), "inflight": 0, "idle_min": 10.0, "max_min": 120.0, "token": None, "stopping": False}
+state = {"last": time.time(), "inflight": 0, "idle_min": 10.0, "max_min": 120.0, "token": None, "stopping": False, "browser": "starting", "browser_error": ""}
 _auth_cache: dict[str, float] = {}
 
 app = FastAPI(title="Free AI computer")
@@ -112,7 +113,8 @@ async def ping():
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "owner": OWNER, "codespace": CODESPACE, "home": str(HOME),
+    return {"ok": True, "version": SERVER_VERSION, "browser": state["browser"], "browser_error": state["browser_error"],
+            "owner": OWNER, "codespace": CODESPACE, "home": str(HOME),
             "uptime_s": int(time.time() - STARTED), "idle_min": state["idle_min"], "max_min": state["max_min"]}
 
 
@@ -218,9 +220,28 @@ async def search(body: dict):
     try:
         rows = await asyncio.to_thread(go)
     except Exception as e:
-        raise HTTPException(502, f"search failed: {e}")
+        rows, err = [], str(e)
+    else:
+        err = ""
+    if not rows:  # DuckDuckGo had nothing or failed: fall back to Google News RSS (no key needed)
+        try:
+            rows = await google_news(q, n)
+        except Exception as e:
+            if err:
+                raise HTTPException(502, f"search failed: {err}; Google News fallback: {e}")
     return {"query": q, "results": [{"title": r.get("title"), "url": r.get("href") or r.get("url"), "snippet": r.get("body") or r.get("excerpt"),
                                      "date": r.get("date"), "source": r.get("source")} for r in rows]}
+
+
+async def google_news(q: str, n: int):
+    url = f"https://news.google.com/rss/search?q={quote(q)}&hl=en-US&gl=US&ceid=US:en"
+    async with httpx.AsyncClient(timeout=20, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"}) as c:
+        r = await c.get(url)
+    rows = []
+    for item in re.findall(r"<item>(.*?)</item>", r.text, re.S)[:n]:
+        g = lambda tag: htmllib.unescape((re.search(rf"<{tag}[^>]*>(.*?)</{tag}>", item, re.S) or [None, ""])[1]).replace("<![CDATA[", "").replace("]]>", "").strip()
+        rows.append({"title": g("title"), "href": g("link"), "body": re.sub(r"<[^>]+>", " ", g("description"))[:300], "date": g("pubDate"), "source": g("source")})
+    return rows
 
 
 # ---------- plain page reader (no browser needed) ----------
@@ -290,13 +311,31 @@ async def page():
     return _pw["page"]
 
 
+@app.on_event("startup")
+async def warm_browser():
+    async def go():
+        for attempt in range(40):  # Chromium may still be installing in the background; keep trying for ~10 min
+            try:
+                await page()
+                state["browser"], state["browser_error"] = "ready", ""
+                return
+            except Exception as e:
+                state["browser"], state["browser_error"] = "installing", str(e)[:300]
+                _pw["browser"] = None
+                await asyncio.sleep(15)
+        state["browser"] = "unavailable"
+    asyncio.create_task(go())
+
+
 @app.post("/browser")
 async def browser(body: dict):
     action = body.get("action", "read")
     async with _browser_lock:
         try:
             pg = await page()
+            state["browser"] = "ready"
         except Exception as e:
+            state["browser"], state["browser_error"] = "unavailable", str(e)[:300]
             if action == "goto" and body.get("url"):
                 r = await fetch_text(body["url"])
                 r.update(screenshot=None, note=f"Chromium unavailable ({str(e)[:120]}); fetched the page without a browser.")

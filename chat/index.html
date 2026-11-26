@@ -176,6 +176,9 @@ input[type=range]{flex:1;accent-color:var(--accent);height:28px}
 .menu.on{display:block}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);transform:translateX(-50%);background:#e3e3e3;color:#111;padding:10px 16px;border-radius:14px;font-size:14px;z-index:30;max-width:90vw;box-shadow:0 6px 24px #0008}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.acts .icon.on{color:#0b1a4a;background:var(--accent2)}
+select.inp{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#9aa0a6 50%),linear-gradient(135deg,#9aa0a6 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:36px}
 </style>
 </head>
 <body class="start">
@@ -251,6 +254,13 @@ input[type=range]{flex:1;accent-color:var(--accent);height:28px}
         <div class="item"><div class="lbl"><b>Fall back automatically</b><small>If your model fails, try other models before giving up.</small></div><label class="sw"><input type="checkbox" id="sFall"><span></span></label></div>
       </div>
     </div>
+    <div class="group"><div class="gh">Read aloud</div>
+      <div class="card">
+        <div class="item col"><div class="lbl"><b>Voice</b><small>Your device's built-in voices. On iPhone, download better ones in Settings → Accessibility → Spoken Content → Voices.</small></div><select class="inp" id="sVoice"></select></div>
+        <div class="item col"><div class="lbl"><b>Speed</b></div><div class="range"><input type="range" id="sRate" min="0.6" max="1.8" step="0.1"><span class="rv" id="sRateV"></span></div></div>
+        <div class="item col"><div class="btnrow"><button class="btn" id="sVoiceTest">Play a sample</button></div></div>
+      </div>
+    </div>
     <div class="group"><div class="gh"><span>Providers</span><span>Off = hidden and skipped</span></div>
       <div class="card" id="sProv"></div>
     </div>
@@ -275,7 +285,7 @@ input[type=range]{flex:1;accent-color:var(--accent);height:28px}
 </section>
 
 <script>
-{
+(()=>{
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store={get(k,d){try{const v=localStorage.getItem('fac_'+k);return v?JSON.parse(v):d}catch{return d}},set(k,v){try{localStorage.setItem('fac_'+k,JSON.stringify(v))}catch{}}};
@@ -308,7 +318,7 @@ const PRESETS={
   creative:{t:'Creative',d:'Vivid and playful',p:'You are an imaginative creative partner. Offer vivid, original ideas, vary your style, and build on what the user gives you.'},
   custom:{t:'Custom',d:'Your own instructions',p:''},
 };
-const DEF={name:'',about:'',preset:'default',custom:'',len:'balanced',temp:0.7,think:true,fall:true,proxy:'',off:{},favs:[],stats:{},img:'pollinations'};
+const DEF={name:'',about:'',preset:'default',custom:'',len:'balanced',temp:0.7,think:true,fall:true,voice:'',rate:1,proxy:'',off:{},favs:[],stats:{},img:'pollinations'};
 const settings=Object.assign({},DEF,store.get('settings2',{}));
 if(!PRESETS[settings.preset]) settings.preset='default';
 let saveT=0;
@@ -469,10 +479,10 @@ function tempLabel(v){ return v<.35?'Precise':v<.9?'Balanced':v<1.2?'Creative':'
 function openSettings(){
   $('sName').value=settings.name; $('sAbout').value=settings.about; $('sProxy').value=settings.proxy;
   $('sTemp').value=settings.temp; $('sTempV').textContent=`${tempLabel(settings.temp)} · ${(+settings.temp).toFixed(1)}`;
-  $('sThink').checked=settings.think; $('sFall').checked=settings.fall;
+  $('sThink').checked=settings.think; $('sFall').checked=settings.fall; paintVoices();
   for(const b of $('sLen').children) b.classList.toggle('on',b.dataset.v===settings.len);
   loadPuter().then(paintSettingsProviders).catch(()=>{});
-  paintPresets(); paintSysBox(); open('settings'); paintSettingsProviders(); providers.filter(enabled).forEach(loadModels);
+  paintPresets(); paintSysBox(); openSheet('settings'); paintSettingsProviders(); providers.filter(enabled).forEach(loadModels);
 }
 $('presets').addEventListener('click',e=>{ const b=e.target.closest('[data-k]'); if(!b) return; settings.preset=b.dataset.k; saveSettings(); paintPresets(); paintSysBox(); });
 $('sSys').addEventListener('input',()=>{ settings.custom=$('sSys').value; if(settings.preset!=='custom'){ settings.preset='custom'; paintPresets(); } $('sCount').textContent=`${settings.custom.length} characters`; $('sPrev').textContent=systemPrompt(); saveSettings(); });
@@ -480,6 +490,9 @@ $('sName').addEventListener('input',()=>{ settings.name=$('sName').value; $('sPr
 $('sAbout').addEventListener('input',()=>{ settings.about=$('sAbout').value; $('sPrev').textContent=systemPrompt(); saveSettings(); });
 $('sLen').addEventListener('click',e=>{ const b=e.target.closest('[data-v]'); if(!b) return; settings.len=b.dataset.v; for(const x of $('sLen').children) x.classList.toggle('on',x===b); $('sPrev').textContent=systemPrompt(); saveSettings(); });
 $('sTemp').addEventListener('input',()=>{ settings.temp=+$('sTemp').value; $('sTempV').textContent=`${tempLabel(settings.temp)} · ${settings.temp.toFixed(1)}`; saveSettings(); });
+$('sVoice').onchange=()=>{ settings.voice=$('sVoice').value; saveSettings(); };
+$('sRate').addEventListener('input',()=>{ settings.rate=+$('sRate').value; $('sRateV').textContent=settings.rate.toFixed(1)+'×'; saveSettings(); });
+$('sVoiceTest').onclick=()=>{ if(!synth){ toast('Read aloud is not supported here'); return; } stopSpeaking(); const u=new SpeechSynthesisUtterance(`Hi${settings.name.trim()?' '+settings.name.trim():''}, this is how I'll read answers out loud.`); const v=pickVoice(); if(v){ u.voice=v; u.lang=v.lang; } u.rate=settings.rate||1; synth.speak(u); };
 $('sThink').onchange=()=>{ settings.think=$('sThink').checked; saveSettings(); if(cur) render(); };
 $('sFall').onchange=()=>{ settings.fall=$('sFall').checked; saveSettings(); };
 $('sProxy').addEventListener('input',()=>{ settings.proxy=$('sProxy').value.trim(); for(const k in status) delete status[k]; saveSettings(); });
@@ -498,12 +511,12 @@ $('wipe').onclick=()=>{ const w=$('wipe'); if(w.dataset.sure){ chats=[]; save();
 
 /* ---------- sheets / menus ---------- */
 function closeAll(){ for(const id of ['scrim','drawer','pick','settings']) $(id).classList.remove('on'); $('plusMenu').classList.remove('on'); $('moreMenu').classList.remove('on'); }
-function open(id){ closeAll(); $('scrim').classList.add('on'); $(id).classList.add('on'); }
+function openSheet(id){ closeAll(); $('scrim').classList.add('on'); $(id).classList.add('on'); }
 $('scrim').onclick=closeAll;
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
-$('menuBtn').onclick=()=>{ paintHist(); open('drawer'); };
-$('modelBtn').onclick=()=>{ if(enabled(prov('puter'))) loadPuter().then(paintPicker).catch(()=>{}); query=''; $('q').value=''; paintFilters(); open('pick'); paintPicker(); providers.filter(enabled).forEach(loadModels); };
+$('menuBtn').onclick=()=>{ paintHist(); openSheet('drawer'); };
+$('modelBtn').onclick=()=>{ if(enabled(prov('puter'))) loadPuter().then(paintPicker).catch(()=>{}); query=''; $('q').value=''; paintFilters(); openSheet('pick'); paintPicker(); providers.filter(enabled).forEach(loadModels); };
 $('setBtn').onclick=openSettings; $('dSet').onclick=openSettings; $('xSet').onclick=openSettings;
 function popMenu(menu,btn,below){
   const r=btn.getBoundingClientRect(), m=$(menu);
@@ -524,10 +537,10 @@ $('hist').addEventListener('click',e=>{
   const d=e.target.closest('[data-del]');
   if(d){ chats=chats.filter(c=>c.id!==d.dataset.del); save(); if(cur&&cur.id===d.dataset.del) newChat(); paintHist(); return; }
   const r=e.target.closest('[data-id]'); if(!r) return;
-  if(busy) busy.abort();
+  if(busy) busy.abort(); stopSpeaking();
   cur=chats.find(c=>c.id===r.dataset.id); render(); closeAll();
 });
-function newChat(){ if(busy) busy.abort(); cur=null; files=[]; imgMode=false; setMode('chat'); render(); closeAll(); }
+function newChat(){ stopSpeaking(); if(busy) busy.abort(); cur=null; files=[]; imgMode=false; setMode('chat'); render(); closeAll(); }
 $('newBtn').onclick=newChat; $('dNew').onclick=newChat;
 
 function setMode(m){ mode=m; $('mChat').classList.toggle('on',m==='chat'); $('mTask').classList.toggle('on',m==='task'); }
@@ -581,6 +594,7 @@ function splitThink(m){
   return {think:think.trim(),text:text.replace(/^\s+/,'')};
 }
 const IC={
+  stop:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>',
   copy:'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></svg>',
   share:'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
   speak:'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" stroke-linecap="round"/></svg>',
@@ -604,7 +618,7 @@ function paintTail(){ const t=$('tail'); if(t) t.innerHTML=busy?'':'<p class="di
 function msgHTML(m,i){
   if(m.role==='user') return `<div class="user" data-i="${i}"><div class="bubble">${esc(m.display||m.content)}</div></div>`;
   const last=i===cur.messages.length-1, {think,text}=splitThink(m);
-  const acts=m.pending?'':`<div class="acts">${text?`<button class="icon" data-act="copy" data-i="${i}" aria-label="Copy">${IC.copy}</button><button class="icon" data-act="share" data-i="${i}" aria-label="Share">${IC.share}</button><button class="icon" data-act="speak" data-i="${i}" aria-label="Read aloud">${IC.speak}</button>`:''}${last?`<button class="icon" data-act="regen" aria-label="${m.error?'Retry':'Regenerate'}">${IC.regen}</button>`:''}${m.needsPuter&&!puterSignedIn()?`<span style="margin:4px 6px">${SIGNIN_BTN}</span>`:''}${m.error?`<button class="chip" data-act="switch" style="margin:4px 6px">${m.imgPrompt?'Other generator':'Switch model'}</button>`:''}</div>`;
+  const acts=m.pending?'':`<div class="acts">${text?`<button class="icon" data-act="copy" data-i="${i}" aria-label="Copy">${IC.copy}</button><button class="icon" data-act="share" data-i="${i}" aria-label="Share">${IC.share}</button><button class="icon${speaking===i?' on':''}" data-act="speak" data-i="${i}" aria-label="${speaking===i?'Stop reading':'Read aloud'}">${speaking===i?IC.stop:IC.speak}</button>`:''}${last?`<button class="icon" data-act="regen" aria-label="${m.error?'Retry':'Regenerate'}">${IC.regen}</button>`:''}${m.needsPuter&&!puterSignedIn()?`<span style="margin:4px 6px">${SIGNIN_BTN}</span>`:''}${m.error?`<button class="chip" data-act="switch" style="margin:4px 6px">${m.imgPrompt?'Other generator':'Switch model'}</button>`:''}</div>`;
   const showThink=think&&settings.think;
   return `<div class="resp" data-i="${i}">
     <div class="meta"><div class="spark sm${m.pending?' spin':''}"></div>${esc(m.via||'')}</div>
@@ -629,10 +643,68 @@ $('chat').addEventListener('click',async e=>{
   const a=b.dataset.act, m=cur&&cur.messages[+b.dataset.i];
   if(a==='copy'){ try{ await navigator.clipboard.writeText(splitThink(m).text); toast('Copied'); }catch{ toast('Copy failed'); } }
   else if(a==='share'){ const t=splitThink(m).text; if(navigator.share){ try{ await navigator.share({text:t}); }catch{} } else { try{ await navigator.clipboard.writeText(t); toast('Copied to share'); }catch{} } }
-  else if(a==='speak'){ if(!window.speechSynthesis){ toast('Read aloud is not supported here'); return; } if(speechSynthesis.speaking){ speechSynthesis.cancel(); return; } speechSynthesis.speak(new SpeechSynthesisUtterance(splitThink(m).text.replace(/```[\s\S]*?```/g,' code block ').replace(/[#*_`>|]/g,' '))); }
+  else if(a==='speak'){ speak(+b.dataset.i); }
   else if(a==='regen'){ if(busy) return; const last=cur.messages.pop(); render(); if(last&&last.imgPrompt) makeImage(last.imgPrompt,last.imgProv); else run(); }
   else if(a==='switch'){ if(m&&m.imgPrompt||cur.messages[cur.messages.length-1]?.imgPrompt){ imgMode=true; paintAttach(); toast('Pick a generator above the input'); } else $('modelBtn').click(); }
 });
+
+/* ---------- read aloud (browser's built-in voices) ---------- */
+let speaking=-1, speakGen=0;
+const synth=window.speechSynthesis;
+function voices(){ try{ return synth?synth.getVoices():[]; }catch{ return []; } }
+function voiceScore(v){
+  const lang=(navigator.language||'en-US').toLowerCase(), vl=(v.lang||'').toLowerCase().replace('_','-');
+  let s=0;
+  if(vl===lang) s+=40; else if(vl.split('-')[0]===lang.split('-')[0]) s+=25;
+  if(/premium|enhanced|neural|natural|siri|google/i.test(v.name)) s+=20;
+  if(v.localService) s+=3;
+  if(/compact|eloquence|espeak|novelty|bad news|bells|boing|bubbles|cellos|whisper|zarvox|trinoids|jester|organ|superstar|wobble|albert|bahh/i.test(v.name)) s-=60;
+  return s;
+}
+function pickVoice(){
+  const vs=voices(); if(!vs.length) return null;
+  return vs.find(v=>v.voiceURI===settings.voice)||[...vs].sort((a,b)=>voiceScore(b)-voiceScore(a))[0];
+}
+function plainForSpeech(t){
+  return t.replace(/```[\s\S]*?```/g,' (code block) ').replace(/`([^`]+)`/g,'$1').replace(/!\[[^\]]*\]\([^)]*\)/g,'').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm,'').replace(/^\s*[-*+]\s+/gm,'').replace(/^\s*\d+\.\s+/gm,'').replace(/^\s*>\s?/gm,'').replace(/\|/g,', ').replace(/^[\s,:-]+$/gm,'')
+    .replace(/(\*\*|__|\*|_|~~)/g,'').replace(/https?:\/\/\S+/g,'link').replace(/\n{2,}/g,'. ').replace(/\s+/g,' ').trim();
+}
+function chunks(t){
+  const out=[]; const parts=t.match(/[^.!?。！？]+[.!?。！？]*\s*/g)||[t];
+  let buf='';
+  for(const p of parts){ if((buf+p).length>220&&buf){ out.push(buf.trim()); buf=''; } if(p.length>220){ for(let i=0;i<p.length;i+=220) out.push(p.slice(i,i+220)); continue; } buf+=p; }
+  if(buf.trim()) out.push(buf.trim());
+  return out;
+}
+function stopSpeaking(){ speakGen++; try{ synth.cancel(); }catch{} const was=speaking; speaking=-1; if(was>=0&&cur&&cur.messages[was]) paintMsg(was); }
+function speak(i){
+  if(!synth||!window.SpeechSynthesisUtterance){ toast('Read aloud is not supported in this browser'); return; }
+  if(speaking===i){ stopSpeaking(); return; }
+  stopSpeaking();
+  const text=plainForSpeech(splitThink(cur.messages[i]).text); if(!text) return;
+  const gen=++speakGen, v=pickVoice(), parts=chunks(text);
+  speaking=i; paintMsg(i);
+  parts.forEach((p,k)=>{
+    const u=new SpeechSynthesisUtterance(p);
+    if(v){ u.voice=v; u.lang=v.lang; } u.rate=settings.rate||1;
+    if(k===parts.length-1) u.onend=()=>{ if(gen===speakGen){ speaking=-1; if(cur&&cur.messages[i]) paintMsg(i); } };
+    u.onerror=e=>{ if(gen===speakGen&&e.error!=='interrupted'&&e.error!=='canceled'){ speaking=-1; paintMsg(i); toast('Read aloud stopped: '+e.error); } };
+    synth.speak(u);   // queued synchronously inside the tap, which iOS requires
+  });
+  // Chrome pauses long queues after ~15s; nudge it while we're speaking.
+  const keep=setInterval(()=>{ if(gen!==speakGen||!synth.speaking){ clearInterval(keep); return; } if(!/iPhone|iPad|Mac/.test(navigator.userAgent)){ synth.pause(); synth.resume(); } },10000);
+}
+if(synth){ try{ synth.addEventListener('voiceschanged',()=>{ if($('settings').classList.contains('on')) paintVoices(); }); }catch{} voices(); }
+function paintVoices(){
+  const vs=voices(), lang=(navigator.language||'en').split('-')[0].toLowerCase();
+  const sorted=[...vs].sort((a,b)=>voiceScore(b)-voiceScore(a));
+  const mine=sorted.filter(v=>(v.lang||'').toLowerCase().startsWith(lang)), rest=sorted.filter(v=>!mine.includes(v)&&voiceScore(v)>-30);
+  const best=pickVoice();
+  const opt=v=>`<option value="${esc(v.voiceURI)}"${best&&best.voiceURI===v.voiceURI?' selected':''}>${esc(v.name)} · ${esc(v.lang)}${/premium|enhanced|neural|natural|siri/i.test(v.name)?' · HQ':''}</option>`;
+  $('sVoice').innerHTML=vs.length?`<optgroup label="Your language">${mine.map(opt).join('')}</optgroup>${rest.length?`<optgroup label="Other languages">${rest.map(opt).join('')}</optgroup>`:''}`:'<option>No voices available</option>';
+  $('sRate').value=settings.rate; $('sRateV').textContent=(+settings.rate).toFixed(1)+'×';
+}
 
 /* ---------- sending ---------- */
 function send(){
@@ -786,11 +858,28 @@ function puterSignedIn(){ try{ return !!(window.puter&&puter.auth&&puter.auth.is
 const SIGNIN_BTN='<button class="chip on" data-puter-signin>Sign in to Puter</button>';
 function puterSignIn(){
   if(!window.puter||!puter.auth){ toast('Loading Puter… tap Sign in again in a second'); loadPuter().catch(()=>toast('Could not load Puter')); return; }
+  // Open the sign-in window right now, inside the tap, so Safari/Chrome allow it.
+  const pre=window.open('about:blank','_blank');
+  if(!pre){ toast('The browser blocked the sign-in window. Allow pop-ups for spencie.me and tap again.'); return; }
+  try{ pre.document.title='Signing in to Puter…'; pre.document.body.style.cssText='background:#000;color:#ccc;font:16px system-ui;display:grid;place-items:center;height:100vh;margin:0'; pre.document.body.textContent='Opening Puter sign-in…'; }catch{}
+  // Puter decides whether it may open a popup and then calls window.open.
+  // Make it see an active tap and give it the window we already opened.
+  const origOpen=window.open, hadUA=Object.getOwnPropertyDescriptor(navigator,'userActivation');
+  let used=false;
+  window.open=function(url,name,feat){
+    if(!used&&pre&&!pre.closed&&url&&/puter/.test(String(url))){ used=true; try{ pre.location.href=url; }catch{ return origOpen.call(window,url,name,feat); } return pre; }
+    return origOpen.call(window,url,name,feat);
+  };
+  try{ Object.defineProperty(navigator,'userActivation',{configurable:true,get:()=>({hasBeenActive:true,isActive:true})}); }catch{}
+  const restore=()=>{ window.open=origOpen; try{ if(hadUA) Object.defineProperty(navigator,'userActivation',hadUA); else delete navigator.userActivation; }catch{} };
   let pr;
-  try{ pr=puter.auth.signIn({attempt_temp_user_creation:true}); }catch(e){ toast('Sign-in could not open'); return; }
-  Promise.resolve(pr).then(()=>{ toast('Signed in to Puter'); onPuterAuth(); }).catch(e=>{
+  try{ pr=puter.auth.signIn({attempt_temp_user_creation:true}); }catch(e){ restore(); try{pre.close()}catch{} toast('Sign-in could not open'); return; }
+  setTimeout(restore,4000);
+  setTimeout(()=>{ if(!used){ try{ pre.close(); }catch{} } },8000);
+  Promise.resolve(pr).then(()=>{ restore(); toast('Signed in to Puter'); onPuterAuth(); }).catch(e=>{
+    restore(); try{ if(!pre.closed) pre.close(); }catch{}
     const c=e&&(e.error||e.code||e.message);
-    toast(c==='popup_blocked'?'Safari blocked the sign-in window. Settings → Safari → turn off Block Pop-ups, then tap again.':c==='auth_window_closed'?'Sign-in cancelled':'Sign-in failed: '+((e&&(e.msg||e.message))||c||'unknown error'));
+    toast(c==='popup_blocked'?'The browser blocked the sign-in window. Allow pop-ups for spencie.me and tap again.':c==='auth_window_closed'?'Sign-in cancelled':'Sign-in failed: '+((e&&(e.msg||e.message))||c||'unknown error'));
   });
 }
 function onPuterAuth(){
@@ -863,7 +952,7 @@ async function callPuter(model,messages,onDelta,signal){
 paintAvatar(); paintTitle(); render();
 if(sel.p==='puter'||settings.img==='puter') loadPuter().catch(()=>{});
 providers.filter(p=>enabled(p)&&p.type!=='g4f').forEach(loadModels);
-}
+})();
 </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 // Free AI service worker: offline shell + cached libraries. Model weights are cached by the voice libraries themselves.
-const V = 'fac-v1';
+const V = 'fac-v2';
 const SHELL = ['./', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).catch(() => {})); });
 self.addEventListener('activate', e => e.waitUntil((async () => {

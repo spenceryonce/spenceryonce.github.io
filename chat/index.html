@@ -10,12 +10,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 <style>
-:root{--ink:#e3e3e3;--dim:#9aa0a6;--pill:#2f3033;--pill2:#333537;--line:#3c4043;--blue:#1f3a9e;--accent:#8ab4f8;--err:#f28b82}
+:root{--ink:#e3e3e3;--dim:#9aa0a6;--dim2:#6f7378;--pill:#2f3033;--pill2:#333537;--line:#3c4043;--card:#202124;--card2:#28292c;--sheet:#131416;--blue:#1f3a9e;--accent:#8ab4f8;--accent2:#c2d7ff;--good:#81c995;--warn:#fdd663;--err:#f28b82;
+  --grad:conic-gradient(from 210deg,#4285f4,#9b72cb,#d96570,#f6c026,#34a853,#4285f4)}
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#000;color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Google Sans","Segoe UI",Roboto,system-ui,sans-serif;overflow:hidden}
-body{transition:background .3s}
 body.start{background:radial-gradient(120% 55% at 50% 105%,#2443b8 0%,#142774 28%,#070b24 55%,#000 78%)}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button,input,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;padding:0}
 svg{display:block;flex:none}
 .app{height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);max-width:860px;margin:0 auto;overflow:hidden}
 header{display:flex;align-items:center;gap:4px;padding:8px 10px}
@@ -25,14 +26,14 @@ header{display:flex;align-items:center;gap:4px;padding:8px 10px}
 .title b{font-weight:500;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;max-width:45%}
 .title span{color:var(--dim);overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
 .title:active{background:#ffffff14}
-.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c58b4a,#6d3d1c);display:grid;place-items:center;font-weight:600;font-size:17px;border:2px solid #2b2b2b;margin:2px}
+.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c58b4a,#6d3d1c);display:grid;place-items:center;font-weight:600;font-size:17px;border:2px solid #2b2b2b;margin:2px;flex:none;text-transform:uppercase}
 main{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 20px 20px;overscroll-behavior:contain}
 .empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center}
-.spark{width:56px;height:56px;background:conic-gradient(from 210deg,#4285f4,#9b72cb,#d96570,#f6c026,#34a853,#4285f4);-webkit-mask:var(--star) center/contain no-repeat;mask:var(--star) center/contain no-repeat;--star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.6 17.4 12 24 12 17.4 12 12 17.4 12 24 12 17.4 6.6 12 0 12 6.6 12 12 6.6 12 0Z'/%3E%3C/svg%3E")}
-.spark.sm{width:18px;height:18px}
+.spark{width:56px;height:56px;background:var(--grad);-webkit-mask:var(--star) center/contain no-repeat;mask:var(--star) center/contain no-repeat;--star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.6 17.4 12 24 12 17.4 12 12 17.4 12 24 12 17.4 6.6 12 0 12 6.6 12 12 6.6 12 0Z'/%3E%3C/svg%3E");flex:none}
+.spark.sm{width:18px;height:18px}.spark.md{width:26px;height:26px}
 .spark.spin{animation:spin 1.4s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.spark.spin{animation:none}}
+@media(prefers-reduced-motion:reduce){.spark.spin{animation:none}*{transition:none!important}}
 .hello{font-size:clamp(34px,9vw,44px);line-height:1.1;font-weight:400;margin:0;text-wrap:balance}
 .sub{color:var(--dim);font-size:14px;margin-top:-10px}
 .banner{font-size:13.5px;color:var(--dim);background:#ffffff0a;border:1px solid #ffffff14;border-radius:14px;padding:10px 12px;margin:6px 0 4px}
@@ -55,10 +56,11 @@ details.think summary::-webkit-details-marker{display:none}
 details.think .md{font-size:14.5px;color:var(--dim);border-left:2px solid var(--line);padding-left:12px;margin-top:8px}
 .err{color:var(--err);font-size:14.5px;background:#f28b8212;border:1px solid #f28b823a;border-radius:14px;padding:10px 12px;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
 .note{font-size:12.5px;color:var(--dim)}
-.acts{display:flex;gap:2px;margin:4px -10px 0;flex-wrap:wrap}
+.acts{display:flex;gap:2px;margin:4px -10px 0;flex-wrap:wrap;align-items:center}
 .acts .icon{color:#c4c7c5}
-.chip{font-size:14px;padding:6px 14px;border-radius:18px;border:1px solid var(--line);min-height:36px}
+.chip{font-size:14px;padding:6px 14px;border-radius:18px;border:1px solid var(--line);min-height:36px;white-space:nowrap}
 .chip:active{background:#ffffff14}
+.chip.on{background:var(--accent2);color:#0b1a4a;border-color:var(--accent2)}
 .disclaimer{color:var(--dim);font-size:13.5px;margin:6px 0 8px}
 .genimg{width:100%;max-width:420px;aspect-ratio:1;border-radius:18px;background:#1b1c1f;object-fit:cover;display:block}
 .dock{padding:0 14px 10px}
@@ -69,39 +71,110 @@ details.think .md{font-size:14.5px;color:var(--dim);border-left:2px solid var(--
 .attach{display:flex;gap:6px;flex-wrap:wrap;padding:0 8px 8px}
 .attach .chip{background:var(--pill)}
 .bar{display:flex;align-items:flex-end;gap:2px;background:var(--pill);border-radius:34px;padding:7px 7px 7px 6px}
-textarea{flex:1;background:none;border:0;outline:0;color:var(--ink);font:inherit;font-size:18px;resize:none;max-height:160px;padding:11px 6px;line-height:1.35}
-textarea::placeholder{color:#a8abb3}
+.bar textarea{flex:1;background:none;border:0;outline:0;font-size:18px;resize:none;max-height:160px;padding:11px 6px;line-height:1.35}
+textarea::placeholder,input::placeholder{color:#8e9196}
 .go{width:52px;height:52px;border-radius:50%;background:var(--blue);display:grid;place-items:center;flex:none;color:#fff}
 body:not(.start) .go{background:#3b2a8c}
-.go.ready{background:#c2d7ff;color:#0b1a4a}
+.go.ready{background:var(--accent2);color:#0b1a4a}
 .mic.on{color:var(--err)}
-.scrim{position:fixed;inset:0;background:#0009;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+
+/* overlays */
+.scrim{position:fixed;inset:0;background:#000a;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
 .scrim.on{opacity:1;pointer-events:auto}
-.drawer{position:fixed;top:0;bottom:0;left:0;width:min(320px,86vw);background:#131416;z-index:11;transform:translateX(-102%);transition:transform .25s;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 12px calc(env(safe-area-inset-bottom) + 14px)}
+.drawer{position:fixed;top:0;bottom:0;left:0;width:min(320px,86vw);background:var(--sheet);z-index:11;transform:translateX(-102%);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 12px calc(env(safe-area-inset-bottom) + 14px)}
 .drawer.on{transform:none}
-h3{font-size:14px;color:var(--dim);font-weight:500;margin:16px 8px 6px}
 .row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border-radius:14px;min-height:46px}
 .row:active,.row.on{background:#ffffff12}
 .row .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row small{color:var(--dim);font-size:12px}
-.list{flex:1;overflow-y:auto;overflow-x:hidden}
-.sheet{position:fixed;left:0;right:0;bottom:0;max-height:84dvh;background:#1b1c1f;border-radius:24px 24px 0 0;z-index:11;transform:translateY(102%);transition:transform .25s;display:flex;flex-direction:column;padding:8px 14px calc(env(safe-area-inset-bottom) + 14px);max-width:860px;margin:0 auto}
+.list{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.dh{font-size:13px;color:var(--dim);font-weight:500;margin:16px 12px 6px}
+.sheet{position:fixed;left:0;right:0;bottom:0;height:92dvh;background:var(--sheet);border-radius:28px 28px 0 0;z-index:11;transform:translateY(102%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;max-width:860px;margin:0 auto;box-shadow:0 -10px 40px #0008}
 .sheet.on{transform:none}
-.grab{width:36px;height:4px;border-radius:2px;background:#5f6368;margin:4px auto 6px;flex:none}
-.prov{border-top:1px solid #2a2b2e;padding:6px 0}
-.ph{display:flex;align-items:center;gap:8px;padding:8px;flex-wrap:wrap}
-.ph b{font-weight:500}.ph small{color:var(--dim);font-size:12.5px;flex:1 1 140px}
-.ph .chip{font-size:12.5px;min-height:32px;padding:4px 12px}
-.dot{width:8px;height:8px;border-radius:50%;background:#5f6368;flex:none}.dot.ok{background:#81c995}.dot.bad{background:var(--err)}.dot.wait{background:#fdd663}
-.models{display:flex;flex-wrap:wrap;gap:6px;padding:0 8px 8px}
-.models .chip.on{background:#c2d7ff;color:#0b1a4a;border-color:#c2d7ff}
-.field{display:flex;flex-direction:column;gap:6px;margin:10px 8px}
-.field label{font-size:13px;color:var(--dim)}
-.field input,.field textarea{background:#26272a;border:1px solid var(--line);border-radius:12px;color:var(--ink);font:inherit;font-size:16px;padding:10px 12px;max-height:none}
-.pnote{font-size:12.5px;color:var(--dim);margin:4px 8px}
+.sh-head{padding:8px 16px 10px;flex:none;border-bottom:1px solid #ffffff0d}
+.grab{width:38px;height:5px;border-radius:3px;background:#5f6368;margin:2px auto 8px}
+.sh-bar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sh-bar h2{margin:0;font-size:24px;font-weight:500;letter-spacing:-.01em}
+.done{background:var(--accent2);color:#0b1a4a;font-weight:600;font-size:15px;padding:8px 18px;border-radius:20px;min-height:40px}
+.sh-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 16px calc(env(safe-area-inset-bottom) + 28px);overscroll-behavior:contain}
+.saved{font-size:12.5px;color:var(--good);opacity:0;transition:opacity .3s}.saved.on{opacity:1}
+
+/* settings */
+.group{margin:18px 0 0}
+.gh{font-size:13px;color:var(--dim);margin:0 6px 8px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card{background:var(--card);border-radius:22px;overflow:hidden}
+.card>.item+.item{border-top:1px solid #ffffff0b}
+.item{padding:14px 16px;display:flex;align-items:center;gap:12px;min-height:56px}
+.item.col{flex-direction:column;align-items:stretch;gap:8px}
+.item .lbl{flex:1}
+.item .lbl b{display:block;font-weight:500;font-size:16px}
+.item .lbl small{display:block;color:var(--dim);font-size:13px;line-height:1.35;margin-top:2px}
+.inp{width:100%;background:var(--card2);border:1px solid transparent;border-radius:14px;padding:11px 14px;font-size:16px;outline:0;transition:border-color .15s}
+.inp:focus{border-color:var(--accent)}
+textarea.inp{resize:vertical;min-height:84px;line-height:1.45}
+.profile{display:flex;align-items:center;gap:14px;padding:16px}
+.profile .avatar{width:56px;height:56px;font-size:24px}
+.presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.preset{text-align:left;padding:12px 14px;border-radius:16px;background:var(--card2);border:1.5px solid transparent;min-height:68px;transition:border-color .15s,background .15s}
+.preset b{display:block;font-weight:500;font-size:15px}
+.preset small{display:block;color:var(--dim);font-size:12.5px;line-height:1.3;margin-top:2px}
+.preset.on{border-color:var(--accent);background:#8ab4f814}
+.counter{font-size:12px;color:var(--dim2);text-align:right}
+details.preview summary{cursor:pointer;color:var(--accent);font-size:14px;list-style:none;padding:4px 0}
+details.preview summary::-webkit-details-marker{display:none}
+details.preview pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0c0d0e;border-radius:12px;padding:12px;font-size:13px;color:#c4c7c5;margin:6px 0 0;font-family:ui-monospace,Menlo,monospace}
+.segc{display:flex;background:var(--card2);border-radius:14px;padding:3px;gap:2px}
+.segc button{flex:1;padding:8px 6px;border-radius:11px;font-size:14px;color:#c4c7c5;min-height:38px}
+.segc button.on{background:#43454a;color:#fff;font-weight:500}
+.range{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;accent-color:var(--accent);height:28px}
+.rv{font-size:13px;color:var(--dim);min-width:70px;text-align:right}
+.sw{position:relative;width:50px;height:30px;flex:none}
+.sw input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;border-radius:15px;background:#4a4c50;transition:background .2s}
+.sw span::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s cubic-bezier(.2,.8,.2,1);box-shadow:0 1px 3px #0006}
+.sw input:checked+span{background:#5b8def}
+.sw input:checked+span::after{transform:translateX(20px)}
+.sw input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.mono{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-weight:600;font-size:15px;flex:none;color:#fff}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:10px 16px;border-radius:14px;background:var(--card2);font-size:15px;min-height:44px}
+.btn.danger{color:var(--err)}
+.btn:active{background:#38393c}
+
+/* model picker */
+.search{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:16px;padding:0 14px;margin-top:10px}
+.search input{flex:1;background:none;border:0;outline:0;font-size:16px;padding:12px 0}
+.filters{display:flex;gap:6px;overflow-x:auto;margin:10px -16px 0;padding:0 16px 2px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters .chip{font-size:13.5px;min-height:34px;padding:5px 14px}
+.hero{display:flex;align-items:center;gap:14px;padding:16px;border-radius:22px;margin-top:14px;width:100%;text-align:left;position:relative;background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(120deg,#4285f4,#9b72cb,#d96570,#f6c026) border-box;border:1.5px solid transparent}
+.hero .lbl{flex:1}.hero b{font-weight:500;font-size:17px;display:block}.hero small{color:var(--dim);font-size:13px}
+.check{width:24px;height:24px;border-radius:50%;border:2px solid #5f6368;flex:none;display:grid;place-items:center}
+.on>.check,.hero.on .check{background:var(--accent);border-color:var(--accent)}
+.on>.check::after,.hero.on .check::after{content:"";width:6px;height:11px;border:solid #0b1a4a;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.pgroup{margin-top:18px}
+.phd{display:flex;align-items:center;gap:10px;margin:0 4px 8px}
+.phd .lbl{flex:1}.phd b{font-weight:500;font-size:15px}.phd small{display:block;color:var(--dim);font-size:12.5px}
+.phd .chip{font-size:12.5px;min-height:32px;padding:4px 12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#5f6368;flex:none;display:inline-block}.dot.ok{background:var(--good)}.dot.bad{background:var(--err)}.dot.wait{background:var(--warn)}
+.mrow{display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:58px;cursor:pointer}
+.card>.mrow+.mrow{border-top:1px solid #ffffff0b}
+.mrow:active{background:#ffffff08}
+.mrow.on{background:#8ab4f80f}
+.mrow .lbl{flex:1;overflow:hidden}
+.mrow .nm{font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .id{font-size:11.5px;color:var(--dim2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,Menlo,monospace}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.tag{font-size:11px;padding:1px 8px;border-radius:8px;background:#ffffff0f;color:#c4c7c5;white-space:nowrap}
+.tag.g{background:#81c9951f;color:var(--good)}.tag.y{background:#fdd6631c;color:var(--warn)}
+.star{width:40px;height:40px;display:grid;place-items:center;border-radius:50%;color:#6f7378;flex:none}
+.star.on{color:#f6c026}
+.more{display:block;width:100%;padding:12px;color:var(--accent);font-size:14px;text-align:center}
+.emptyp{color:var(--dim);font-size:14px;padding:16px;text-align:center}
 .menu{position:fixed;z-index:12;background:#26272a;border-radius:18px;padding:6px;box-shadow:0 8px 30px #000a;display:none;min-width:230px}
 .menu.on{display:block}
-.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);transform:translateX(-50%);background:#e3e3e3;color:#111;padding:10px 16px;border-radius:12px;font-size:14px;z-index:20;max-width:90vw}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);transform:translateX(-50%);background:#e3e3e3;color:#111;padding:10px 16px;border-radius:14px;font-size:14px;z-index:30;max-width:90vw;box-shadow:0 6px 24px #0008}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
@@ -139,129 +212,296 @@ h3{font-size:14px;color:var(--dim);font-weight:500;margin:16px 8px 6px}
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer">
   <button class="row" id="dNew"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg><span class="t">New chat</span></button>
-  <h3>Recent</h3>
+  <div class="dh">Recent</div>
   <div class="list" id="hist"></div>
   <button class="row" id="dSet"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg><span class="t">Settings</span></button>
 </aside>
-<section class="sheet" id="pick"><div class="grab"></div><h3>Models that work without an API key</h3><p class="pnote">Models that fail are hidden automatically. Use Test to check a provider's whole list.</p><div class="list" id="provList"></div></section>
-<section class="sheet" id="settings"><div class="grab"></div><h3>Settings</h3><div class="list">
-  <div class="field"><label for="sSys">System prompt</label><textarea id="sSys" rows="3"></textarea></div>
-  <div class="field"><label for="sProxy">CORS proxy prefix (optional)</label><input id="sProxy" placeholder="https://corsproxy.io/?url=" autocapitalize="off" autocorrect="off"></div>
-  <p class="pnote">Only needed if a provider blocks browser requests. The target URL is URL-encoded and appended.</p>
-  <h3>Add an OpenAI-compatible provider</h3>
-  <div class="field"><label for="cName">Name</label><input id="cName" placeholder="My endpoint"></div>
-  <div class="field"><label for="cBase">Base URL (ends in /v1)</label><input id="cBase" placeholder="https://example.com/v1" autocapitalize="off"></div>
-  <div class="field"><label for="cKey">Key (optional)</label><input id="cKey" autocapitalize="off"></div>
-  <div class="field"><label for="cModels">Models (comma-separated, optional)</label><input id="cModels" autocapitalize="off"></div>
-  <div class="acts" style="margin:0 8px;gap:6px"><button class="chip" id="cAdd">Add provider</button><button class="chip" id="cClear">Remove custom providers</button><button class="chip" id="unhide">Unhide all models</button><button class="chip" id="wipe">Delete all chats</button></div>
-  <p class="pnote" id="sNote"></p>
-</div></section>
+
+<section class="sheet" id="pick" aria-label="Choose a model">
+  <div class="sh-head"><div class="grab"></div>
+    <div class="sh-bar"><h2>Models</h2><button class="done" data-close>Done</button></div>
+    <div class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa0a6" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search models" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+    <div class="filters" id="filters"></div>
+  </div>
+  <div class="sh-body" id="provList"></div>
+</section>
+
+<section class="sheet" id="settings" aria-label="Settings">
+  <div class="sh-head"><div class="grab"></div><div class="sh-bar"><h2>Settings</h2><span class="saved" id="saved">Saved</span><button class="done" data-close>Done</button></div></div>
+  <div class="sh-body">
+    <div class="group"><div class="gh">You</div>
+      <div class="card">
+        <div class="profile"><div class="avatar" id="pAv">S</div><div style="flex:1"><input class="inp" id="sName" placeholder="What should the AI call you?" autocomplete="given-name"></div></div>
+        <div class="item col"><div class="lbl"><b>About you</b><small>Your job, interests, how you like explanations. Sent to every model.</small></div><textarea class="inp" id="sAbout" rows="3" placeholder="e.g. Full-stack developer, into graphics programming. Skip the basics."></textarea></div>
+      </div>
+    </div>
+    <div class="group"><div class="gh">Personality</div>
+      <div class="card"><div class="item col">
+        <div class="presets" id="presets"></div>
+        <textarea class="inp" id="sSys" rows="4" placeholder="Write your own instructions…"></textarea>
+        <div class="counter" id="sCount"></div>
+        <details class="preview"><summary>Preview full system prompt</summary><pre id="sPrev"></pre></details>
+      </div></div>
+    </div>
+    <div class="group"><div class="gh">Responses</div>
+      <div class="card">
+        <div class="item col"><div class="lbl"><b>Length</b></div><div class="segc" id="sLen"><button data-v="short">Short</button><button data-v="balanced">Balanced</button><button data-v="detailed">Detailed</button></div></div>
+        <div class="item col"><div class="lbl"><b>Creativity</b><small>Lower is more precise, higher is more varied.</small></div><div class="range"><input type="range" id="sTemp" min="0" max="1.5" step="0.1"><span class="rv" id="sTempV"></span></div></div>
+        <div class="item"><div class="lbl"><b>Show thinking</b><small>Reasoning models' scratch work, folded under each answer.</small></div><label class="sw"><input type="checkbox" id="sThink"><span></span></label></div>
+        <div class="item"><div class="lbl"><b>Fall back automatically</b><small>If your model fails, try other models before giving up.</small></div><label class="sw"><input type="checkbox" id="sFall"><span></span></label></div>
+      </div>
+    </div>
+    <div class="group"><div class="gh"><span>Providers</span><span>Off = hidden and skipped</span></div>
+      <div class="card" id="sProv"></div>
+    </div>
+    <div class="group"><div class="gh">Add your own</div>
+      <div class="card"><div class="item col">
+        <div class="lbl"><b>OpenAI-compatible endpoint</b><small>Any server with /chat/completions. Key is optional.</small></div>
+        <input class="inp" id="cName" placeholder="Name">
+        <input class="inp" id="cBase" placeholder="https://example.com/v1" autocapitalize="off" autocorrect="off">
+        <input class="inp" id="cKey" placeholder="API key (optional)" autocapitalize="off" autocorrect="off">
+        <input class="inp" id="cModels" placeholder="Models, comma-separated (optional)" autocapitalize="off" autocorrect="off">
+        <div class="btnrow"><button class="btn" id="cAdd">Add provider</button><button class="btn danger" id="cClear">Remove custom providers</button></div>
+      </div></div>
+    </div>
+    <div class="group"><div class="gh">Advanced</div>
+      <div class="card">
+        <div class="item col"><div class="lbl"><b>CORS proxy</b><small>Only if a provider blocks browser requests. The URL is encoded and appended.</small></div><input class="inp" id="sProxy" placeholder="https://corsproxy.io/?url=" autocapitalize="off" autocorrect="off"></div>
+        <div class="item col"><div class="btnrow"><button class="btn" id="unhide">Unhide failed models</button><button class="btn" id="export">Copy chats as JSON</button><button class="btn danger" id="wipe">Delete all chats</button></div></div>
+      </div>
+    </div>
+    <p class="note" style="margin:18px 6px 0">Everything stays in this browser. Requests go straight from your device to each provider.</p>
+  </div>
+</section>
 
 <script>
 {
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const store = {get(k,d){try{const v=localStorage.getItem('fac_'+k);return v?JSON.parse(v):d}catch{return d}},set(k,v){try{localStorage.setItem('fac_'+k,JSON.stringify(v))}catch{}}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(k,d){try{const v=localStorage.getItem('fac_'+k);return v?JSON.parse(v):d}catch{return d}},set(k,v){try{localStorage.setItem('fac_'+k,JSON.stringify(v))}catch{}}};
 function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2600); }
 
-/* ---------- providers ---------- */
-const BUILTIN = [
-  {id:'llm7',name:'LLM7',base:'https://api.llm7.io/v1',key:'unused',note:'~30 req/min',models:['default','fast']},
-  {id:'ovh',name:'OVHcloud',base:'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1',note:'2 req/min per model',models:['gpt-oss-120b','gpt-oss-20b']},
-  {id:'pollinations',name:'Pollinations',chat:'https://text.pollinations.ai/openai',modelsUrl:'https://text.pollinations.ai/models',note:'~1 req/15s',models:['openai','openai-fast','mistral']},
-  {id:'kilo',name:'Kilo Gateway',base:'https://api.kilo.ai/api/gateway',note:'free models, ~200 req/hr',filter:m=>/:free$/.test(m),models:[]},
-  {id:'puter',name:'Puter',type:'puter',note:'needs a free Puter sign-in',models:['gpt-4o-mini','gpt-5-nano','claude-sonnet-4','gemini-2.5-flash','deepseek-chat']},
+/* ---------- providers (all keyless) ---------- */
+const BUILTIN=[
+  {id:'ovh',name:'OVHcloud',color:'#123f6d',base:'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1',note:'EU-hosted · 2 req/min per model',models:['gpt-oss-120b','gpt-oss-20b','Qwen3.8-27B'],timeout:45},
+  {id:'kilo',name:'Kilo Gateway',color:'#8a5a00',base:'https://ai-gateway.kilo.ai/api/v1',note:'Free routes · ~200 req/hr',filter:m=>/:free$|free/i.test(m),models:['openrouter/free'],timeout:45},
+  {id:'g4f',name:'GPT4Free',color:'#3d6b2f',type:'g4f',note:'Community router · many models',models:['auto'],timeout:45},
+  {id:'pollinations',name:'Pollinations',color:'#5b2a86',chat:'https://text.pollinations.ai/openai',modelsUrl:'https://text.pollinations.ai/models',note:'~1 req/15s',models:['openai-fast'],timeout:40},
+  {id:'unclose',name:'uncloseai',color:'#7a2e3b',base:'https://hermes.ai.unturf.com/v1',note:'Open models · no published limit',models:[],timeout:45},
+  {id:'apisfree',name:'APIsFreeLLM',color:'#2f5c66',base:'https://api.apisfreellm.com/v1',note:'Experimental',models:[],timeout:40},
+  {id:'horde',name:'AI Horde',color:'#4a4a4a',base:'https://oai.aihorde.net/v1',key:'0000000000',note:'Volunteer GPUs · slow queue',models:[],timeout:120},
+  {id:'puter',name:'Puter',color:'#1d4ed8',type:'puter',note:'Needs a free Puter sign-in',models:['gpt-4o-mini','gpt-5-nano','claude-sonnet-4','gemini-2.5-flash','deepseek-chat'],timeout:60},
 ];
-const AUTO_ORDER = ['llm7','ovh','pollinations','kilo'];
+const AUTO_ORDER=['ovh','kilo','g4f','pollinations','unclose','apisfree','horde'];
 let providers=[];
 const status={};
-function buildProviders(){ providers=[...BUILTIN.map(p=>({...p,models:[...p.models]})), ...store.get('custom',[]).map((c,i)=>({...c,id:'custom'+i}))]; }
+function buildProviders(){ providers=[...BUILTIN.map(p=>({...p,models:[...p.models]})),...store.get('custom',[]).map((c,i)=>({...c,id:'custom'+i,color:'#555',timeout:60}))]; }
 buildProviders();
-const prov = id => providers.find(p=>p.id===id);
+const prov=id=>providers.find(p=>p.id===id);
 
-/* dead-model registry: hidden for 24h after a model-level failure */
-let dead = store.get('dead',{});
-const DAY=864e5;
-const dkey=(p,m)=>p+'|'+m;
-const isDead=(p,m)=>{ const t=dead[dkey(p,m)]; return t && Date.now()-t<DAY; };
+/* ---------- settings ---------- */
+const PRESETS={
+  default:{t:'Balanced',d:'Helpful and friendly',p:'You are a helpful, friendly assistant. Be clear and accurate. Use Markdown when it helps.'},
+  concise:{t:'Concise',d:'Straight to the point',p:'You are a sharp, concise assistant. Lead with the answer, skip filler and caveats unless they matter, and keep responses short.'},
+  tutor:{t:'Tutor',d:'Explains step by step',p:'You are a patient tutor. Explain ideas step by step, use small examples and analogies, and check understanding with a short question at the end when useful.'},
+  coder:{t:'Engineer',d:'Code-first, precise',p:'You are a senior software engineer. Prefer working code over prose, explain trade-offs briefly, use fenced code blocks with language tags, and point out bugs or edge cases.'},
+  creative:{t:'Creative',d:'Vivid and playful',p:'You are an imaginative creative partner. Offer vivid, original ideas, vary your style, and build on what the user gives you.'},
+  custom:{t:'Custom',d:'Your own instructions',p:''},
+};
+const DEF={name:'',about:'',preset:'default',custom:'',len:'balanced',temp:0.7,think:true,fall:true,proxy:'',off:{},favs:[],stats:{}};
+const settings=Object.assign({},DEF,store.get('settings2',{}));
+if(!PRESETS[settings.preset]) settings.preset='default';
+let saveT=0;
+function saveSettings(){ store.set('settings2',settings); clearTimeout(saveT); $('saved').classList.add('on'); saveT=setTimeout(()=>$('saved').classList.remove('on'),1200); paintAvatar(); }
+const basePrompt=()=>settings.preset==='custom'?settings.custom:PRESETS[settings.preset].p;
+function systemPrompt(){
+  const parts=[basePrompt().trim()];
+  if(settings.name.trim()) parts.push(`The user's name is ${settings.name.trim()}.`);
+  if(settings.about.trim()) parts.push(`About the user: ${settings.about.trim()}`);
+  if(settings.len==='short') parts.push('Keep answers brief: a few sentences unless more is truly needed.');
+  if(settings.len==='detailed') parts.push('Give thorough, well-structured, detailed answers.');
+  return parts.filter(Boolean).join('\n\n');
+}
+const enabled=p=>!settings.off[p.id];
+const proxied=u=>settings.proxy?settings.proxy+encodeURIComponent(u):u;
+function paintAvatar(){ const i=(settings.name.trim()[0]||'S'); $('setBtn').textContent=i; $('pAv').textContent=i; }
+
+/* failed-model registry: hidden for 24h */
+let dead=store.get('dead',{});
+const DAY=864e5, dkey=(p,m)=>p+'|'+m;
+const isDead=(p,m)=>{ const t=dead[dkey(p,m)]; return t&&Date.now()-t<DAY; };
 function markDead(p,m){ dead[dkey(p,m)]=Date.now(); store.set('dead',dead); }
-const live = p => p.models.filter(m=>!isDead(p.id,m));
-const hiddenCount = p => p.models.length-live(p).length;
+const live=p=>p.models.filter(m=>!isDead(p.id,m));
+function stat(p,m,v){ settings.stats[dkey(p,m)]={...v,t:Date.now()}; store.set('settings2',settings); }
 
 /* ---------- state ---------- */
 let chats=store.get('chats',[]);
 let cur=null, sel=store.get('sel',{p:'auto',m:''}), mode='chat', busy=null, imgMode=false, files=[];
-const settings=store.get('settings',{sys:'You are a helpful, concise assistant. Use Markdown when it helps.',proxy:''});
+if(sel.p!=='auto'&&!prov(sel.p)) sel={p:'auto',m:''};
 const save=()=>store.set('chats',chats.slice(0,80));
-const proxied=u=>settings.proxy?settings.proxy+encodeURIComponent(u):u;
 
 function paintTitle(){
   const p=prov(sel.p);
   $('tProv').textContent=p?p.name:'Auto';
-  $('tModel').textContent=p?(sel.m||live(p)[0]||''):'Best available';
+  $('tModel').textContent=p?pretty(sel.m||live(p)[0]||''):'Best available';
 }
 
-/* ---------- model lists ---------- */
+/* ---------- model metadata ---------- */
+function pretty(id){
+  let s=String(id).replace(/^[^/]+\//,'').replace(/:free$/,'');
+  return s.replace(/[-_]/g,' ').replace(/\b(gpt|oss|glm|vl|ai)\b/gi,w=>w.toUpperCase()).replace(/\b(\d+(\.\d+)?)b\b/gi,'$1B').replace(/^\w/,c=>c.toUpperCase());
+}
+function tags(id){
+  const s=id.toLowerCase(), t=[];
+  if(/r1|reason|think|gpt-oss|qwen3|nemotron|kimi|glm|o3|o4|deepseek-v|magistral/.test(s)) t.push('Reasoning');
+  if(/coder|code|devstral|codestral/.test(s)) t.push('Coding');
+  if(/\bvl\b|-vl|vision|omni|llava|pixtral/.test(s)) t.push('Vision');
+  if(/mini|nano|flash|fast|lite|small|lightning|turbo|[^0-9](1|3|4|7|8|9|12|20)b\b/.test(s)) t.push('Fast');
+  if(/70b|120b|235b|397b|405b|480b|550b|ultra|large|\bpro\b|opus|sonnet|gpt-4|gpt-5/.test(s)) t.push('Large');
+  return t;
+}
+
+/* ---------- loading model lists ---------- */
 async function loadModels(p){
   if(p.type==='puter'||['ok','wait'].includes(status[p.id])) return;
-  const url=p.modelsUrl||(p.base?p.base.replace(/\/$/,'')+'/models':null);
-  if(!url) return;
   status[p.id]='wait'; paintPicker();
   try{
-    const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),8000);
-    const r=await fetch(proxied(url),{headers:p.key?{Authorization:'Bearer '+p.key}:{},signal:ctl.signal}); clearTimeout(t);
-    if(!r.ok) throw 0;
-    const j=await r.json();
-    let list=Array.isArray(j)?j:(j.data||j.models||[]);
-    list=list.filter(m=>typeof m==='string'||(
-      (!m.tier||/anon/i.test(m.tier)) && m.available!==false && !(m.status&&/deprecat|disabled|unavailable/i.test(m.status)) &&
-      !(m.type&&/embed|image|audio|speech|rerank|transcri/i.test(m.type)) ))
-      .map(m=>typeof m==='string'?m:(m.id||m.name)).filter(Boolean)
-      .filter(id=>!/embed|whisper|tts|rerank|bge-|guard/i.test(id));
+    let list;
+    if(p.type==='g4f'){
+      const c=await g4fClient();
+      const r=await withTimeout(c.models.list(),10000);
+      list=(Array.isArray(r)?r:(r?.data||[])).filter(m=>typeof m==='string'||!m.type||/chat|text/i.test(m.type)).map(m=>typeof m==='string'?m:m.id);
+    } else {
+      const url=p.modelsUrl||(p.base.replace(/\/$/,'')+'/models');
+      const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),9000);
+      const r=await fetch(proxied(url),{headers:p.key?{Authorization:'Bearer '+p.key}:{},signal:ctl.signal}); clearTimeout(t);
+      if(!r.ok) throw 0;
+      const j=await r.json();
+      list=(Array.isArray(j)?j:(j.data||j.models||[])).filter(m=>typeof m==='string'||(
+        (!m.tier||/anon/i.test(m.tier))&&m.available!==false&&!(m.status&&/deprecat|disabled|unavailable/i.test(m.status))&&
+        !(m.type&&/embed|image|audio|speech|rerank|transcri/i.test(m.type)))).map(m=>typeof m==='string'?m:(m.id||m.name));
+    }
+    list=list.filter(Boolean).filter(id=>!/embed|whisper|tts|rerank|bge-|guard|moderation|dall|flux|sdxl|stable-diff|midjourney/i.test(id));
     if(p.filter) list=list.filter(p.filter);
-    if(list.length) p.models=[...new Set(list)];
+    if(list.length) p.models=[...new Set([...(p.id==='g4f'?['auto']:[]),...list])];
     status[p.id]='ok';
   }catch{ status[p.id]=p.models.length?'static':'bad'; }
-  paintPicker();
+  paintPicker(); paintSettingsProviders();
 }
+function withTimeout(pr,ms){ return Promise.race([pr,new Promise((_,r)=>setTimeout(()=>r(new Error('timed out')),ms))]); }
 
+/* ---------- model picker ---------- */
+let filter='all', query='';
+const shown={};
+const FILTERS=['all','favorites','fast','reasoning','coding','vision','large'];
+function paintFilters(){ $('filters').innerHTML=FILTERS.map(f=>`<button class="chip${filter===f?' on':''}" data-f="${f}">${f[0].toUpperCase()+f.slice(1)}</button>`).join(''); }
+$('filters').addEventListener('click',e=>{ const b=e.target.closest('[data-f]'); if(!b) return; filter=b.dataset.f; paintFilters(); paintPicker(); });
+$('q').addEventListener('input',()=>{ query=$('q').value.trim().toLowerCase(); paintPicker(); });
+const isFav=(p,m)=>settings.favs.includes(dkey(p,m));
+function match(p,m){
+  if(query&&!(m.toLowerCase().includes(query)||pretty(m).toLowerCase().includes(query)||p.name.toLowerCase().includes(query))) return false;
+  if(filter==='all') return true;
+  if(filter==='favorites') return isFav(p.id,m);
+  return tags(m).map(t=>t.toLowerCase()).includes(filter);
+}
+function rowHTML(p,m){
+  const on=sel.p===p.id&&(sel.m||live(p)[0])===m, st=settings.stats[dkey(p.id,m)], fav=isFav(p.id,m);
+  let s='';
+  if(st&&Date.now()-st.t<DAY){ if(st.ms) s=`<span class="tag g">${(st.ms/1000).toFixed(1)}s first reply</span>`; else if(st.rl) s='<span class="tag y">busy recently</span>'; }
+  return `<div class="mrow${on?' on':''}" role="button" tabindex="0" data-p="${esc(p.id)}" data-m="${esc(m)}">
+    <div class="lbl"><div class="nm">${esc(m==='auto'?'Auto (router picks)':pretty(m))}</div><div class="id">${esc(m)}</div><div class="tags">${tags(m).map(t=>`<span class="tag">${t}</span>`).join('')}${s}</div></div>
+    <button class="star${fav?' on':''}" data-fav="${esc(dkey(p.id,m))}" aria-label="${fav?'Unfavorite':'Favorite'}"><svg width="20" height="20" viewBox="0 0 24 24" fill="${fav?'currentColor':'none'}" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z"/></svg></button>
+    <span class="check"></span></div>`;
+}
 function paintPicker(){
-  let h=`<div class="prov"><div class="ph"><span class="dot ok"></span><b>Auto</b><small>tries providers until one answers</small></div><div class="models"><button class="chip${sel.p==='auto'?' on':''}" data-p="auto" data-m="">Best available</button></div></div>`;
-  for(const p of providers){
-    const st=status[p.id], ms=live(p), hid=hiddenCount(p);
-    const dot=st==='ok'?'ok':st==='bad'?'bad':st==='wait'?'wait':'';
-    const testing=p.testing?` · testing ${p.testing}`:'';
-    h+=`<div class="prov"><div class="ph"><span class="dot ${dot}"></span><b>${esc(p.name)}</b><small>${esc(p.note||'')}${st==='wait'?' · loading…':''}${esc(testing)}${hid?` · ${hid} hidden`:''}</small>${p.type!=='puter'&&ms.length?`<button class="chip" data-test="${esc(p.id)}">${p.testing?'Testing…':'Test'}</button>`:''}</div><div class="models">${
-      ms.length?ms.map(m=>`<button class="chip${sel.p===p.id&&(sel.m||ms[0])===m?' on':''}" data-p="${esc(p.id)}" data-m="${esc(m)}">${esc(m)}</button>`).join(''):`<span class="pnote">${hid?'All models failed recently.':'No models found.'}</span>`
-    }</div></div>`;
+  if(!$('pick').classList.contains('on')) return;
+  const total=providers.filter(enabled).reduce((n,p)=>n+live(p).length,0);
+  $('q').placeholder=`Search ${total} models`;
+  let h=`<button class="hero${sel.p==='auto'?' on':''}" data-p="auto" data-m=""><div class="spark md"></div><div class="lbl"><b>Auto</b><small>Tries the fastest working models across every provider</small></div><span class="check"></span></button>`;
+  if(filter==='favorites'||query){
+    // flat results
+    const rows=[]; for(const p of providers.filter(enabled)) for(const m of live(p)) if(match(p,m)) rows.push([p,m]);
+    h+=rows.length?`<div class="pgroup"><div class="card">${rows.slice(0,120).map(([p,m])=>rowHTML(p,m).replace('<div class="nm">',`<div class="nm"><span class="note">${esc(p.name)} · </span>`)).join('')}</div></div>`:`<div class="emptyp">${filter==='favorites'&&!query?'Tap the star on any model to pin it here.':'No models match.'}</div>`;
+  } else {
+    for(const p of providers.filter(enabled)){
+      const st=status[p.id], ms=live(p).filter(m=>match(p,m)), hid=p.models.length-live(p).length;
+      if(filter!=='all'&&!ms.length) continue;
+      const dot=st==='ok'?'ok':st==='bad'?'bad':st==='wait'?'wait':'';
+      const lim=shown[p.id]?ms.length:8;
+      h+=`<div class="pgroup"><div class="phd"><div class="mono" style="background:${p.color}">${esc(p.name[0])}</div><div class="lbl"><b>${esc(p.name)} <span class="dot ${dot}"></span></b><small>${esc(p.note||'')}${st==='wait'?' · loading…':''}${p.testing?' · testing '+esc(p.testing):''}${hid?` · ${hid} hidden`:''}</small></div>${p.type!=='puter'&&ms.length?`<button class="chip" data-test="${esc(p.id)}">${p.testing?'Testing…':'Test'}</button>`:''}</div>
+        <div class="card">${ms.length?ms.slice(0,lim).map(m=>rowHTML(p,m)).join('')+(ms.length>lim?`<button class="more" data-showall="${esc(p.id)}">Show all ${ms.length}</button>`:''):`<div class="emptyp">${st==='wait'?'Loading models…':hid?'Every model failed recently. Settings → Unhide failed models.':'No models available right now.'}</div>`}</div></div>`;
+    }
   }
   $('provList').innerHTML=h;
 }
 $('provList').addEventListener('click',e=>{
+  const f=e.target.closest('[data-fav]');
+  if(f){ e.stopPropagation(); const k=f.dataset.fav, i=settings.favs.indexOf(k); if(i>=0) settings.favs.splice(i,1); else settings.favs.push(k); store.set('settings2',settings); paintPicker(); return; }
   const t=e.target.closest('[data-test]'); if(t){ testProvider(prov(t.dataset.test)); return; }
+  const a=e.target.closest('[data-showall]'); if(a){ shown[a.dataset.showall]=1; paintPicker(); return; }
   const b=e.target.closest('[data-p]'); if(!b) return;
-  sel={p:b.dataset.p,m:b.dataset.m}; store.set('sel',sel); paintTitle(); paintPicker(); closeAll();
+  sel={p:b.dataset.p,m:b.dataset.m}; store.set('sel',sel); paintTitle(); closeAll();
 });
+$('provList').addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.matches('.mrow')) e.target.click(); });
 
 async function testProvider(p){
   if(!p||p.testing) return;
-  const ms=live(p); let i=0, removed=0;
+  const ms=live(p).slice(0,25); let i=0, removed=0;
   for(const m of ms){
     p.testing=`${++i}/${ms.length}`; paintPicker();
-    try{ await callOpenAI(p,m,[{role:'user',content:'Say OK.'}],()=>{},null,{max_tokens:8}); }
-    catch(err){ if(modelGone(err)){ markDead(p.id,m); removed++; } }
+    const t0=performance.now();
+    try{ const tc=new AbortController(), tt=setTimeout(()=>tc.abort(),(p.timeout||45)*1000); try{ await raceAbort(callModel(p,m,[{role:'user',content:'Reply with OK.'}],()=>{},tc.signal,true),tc.signal); } finally{ clearTimeout(tt); } stat(p.id,m,{ms:performance.now()-t0}); }
+    catch(err){ if(modelGone(err)){ markDead(p.id,m); removed++; } else if(err.status===429) stat(p.id,m,{rl:1}); }
   }
   p.testing=''; paintPicker(); paintTitle();
-  toast(removed?`${p.name}: hid ${removed} model${removed>1?'s':''} that failed`:`${p.name}: all tested models responded or were only rate-limited`);
+  toast(removed?`${p.name}: hid ${removed} model${removed>1?'s':''} that failed`:`${p.name}: nothing failed (rate limits don't count)`);
 }
+
+/* ---------- settings UI ---------- */
+function paintPresets(){ $('presets').innerHTML=Object.entries(PRESETS).map(([k,v])=>`<button class="preset${settings.preset===k?' on':''}" data-k="${k}"><b>${v.t}</b><small>${v.d}</small></button>`).join(''); }
+function paintSysBox(){ $('sSys').value=basePrompt(); $('sCount').textContent=`${$('sSys').value.length} characters`; $('sPrev').textContent=systemPrompt(); }
+function paintSettingsProviders(){
+  if(!$('settings').classList.contains('on')) return;
+  $('sProv').innerHTML=providers.map(p=>{ const st=status[p.id]; const d=st==='ok'?'ok':st==='bad'?'bad':st==='wait'?'wait':''; return `<div class="item"><div class="mono" style="background:${p.color}">${esc(p.name[0])}</div><div class="lbl"><b>${esc(p.name)} <span class="dot ${d}"></span></b><small>${esc(p.note||'')} · ${live(p).length} models</small></div><label class="sw"><input type="checkbox" data-pon="${esc(p.id)}"${enabled(p)?' checked':''} aria-label="Enable ${esc(p.name)}"><span></span></label></div>`; }).join('');
+}
+function tempLabel(v){ return v<.35?'Precise':v<.9?'Balanced':v<1.2?'Creative':'Wild'; }
+function openSettings(){
+  $('sName').value=settings.name; $('sAbout').value=settings.about; $('sProxy').value=settings.proxy;
+  $('sTemp').value=settings.temp; $('sTempV').textContent=`${tempLabel(settings.temp)} · ${(+settings.temp).toFixed(1)}`;
+  $('sThink').checked=settings.think; $('sFall').checked=settings.fall;
+  for(const b of $('sLen').children) b.classList.toggle('on',b.dataset.v===settings.len);
+  paintPresets(); paintSysBox(); open('settings'); paintSettingsProviders(); providers.filter(enabled).forEach(loadModels);
+}
+$('presets').addEventListener('click',e=>{ const b=e.target.closest('[data-k]'); if(!b) return; settings.preset=b.dataset.k; saveSettings(); paintPresets(); paintSysBox(); });
+$('sSys').addEventListener('input',()=>{ settings.custom=$('sSys').value; if(settings.preset!=='custom'){ settings.preset='custom'; paintPresets(); } $('sCount').textContent=`${settings.custom.length} characters`; $('sPrev').textContent=systemPrompt(); saveSettings(); });
+$('sName').addEventListener('input',()=>{ settings.name=$('sName').value; $('sPrev').textContent=systemPrompt(); saveSettings(); });
+$('sAbout').addEventListener('input',()=>{ settings.about=$('sAbout').value; $('sPrev').textContent=systemPrompt(); saveSettings(); });
+$('sLen').addEventListener('click',e=>{ const b=e.target.closest('[data-v]'); if(!b) return; settings.len=b.dataset.v; for(const x of $('sLen').children) x.classList.toggle('on',x===b); $('sPrev').textContent=systemPrompt(); saveSettings(); });
+$('sTemp').addEventListener('input',()=>{ settings.temp=+$('sTemp').value; $('sTempV').textContent=`${tempLabel(settings.temp)} · ${settings.temp.toFixed(1)}`; saveSettings(); });
+$('sThink').onchange=()=>{ settings.think=$('sThink').checked; saveSettings(); if(cur) render(); };
+$('sFall').onchange=()=>{ settings.fall=$('sFall').checked; saveSettings(); };
+$('sProxy').addEventListener('input',()=>{ settings.proxy=$('sProxy').value.trim(); for(const k in status) delete status[k]; saveSettings(); });
+$('sProv').addEventListener('change',e=>{ const c=e.target.closest('[data-pon]'); if(!c) return; if(c.checked) delete settings.off[c.dataset.pon]; else settings.off[c.dataset.pon]=1; if(!c.checked&&sel.p===c.dataset.pon){ sel={p:'auto',m:''}; store.set('sel',sel); paintTitle(); } saveSettings(); });
+$('cAdd').onclick=()=>{
+  const base=$('cBase').value.trim(); if(!/^https?:\/\//.test(base)){ toast('Enter a base URL starting with https://'); return; }
+  const c=store.get('custom',[]);
+  c.push({name:$('cName').value.trim()||'Custom',base,key:$('cKey').value.trim(),note:'Custom endpoint',models:$('cModels').value.split(',').map(s=>s.trim()).filter(Boolean)});
+  store.set('custom',c); buildProviders(); for(const id of ['cName','cBase','cKey','cModels']) $(id).value='';
+  paintSettingsProviders(); toast('Provider added');
+};
+$('cClear').onclick=()=>{ store.set('custom',[]); buildProviders(); if(!prov(sel.p)&&sel.p!=='auto'){ sel={p:'auto',m:''}; store.set('sel',sel); paintTitle(); } paintSettingsProviders(); toast('Custom providers removed'); };
+$('unhide').onclick=()=>{ dead={}; store.set('dead',dead); paintTitle(); paintSettingsProviders(); toast('All models are back'); };
+$('export').onclick=async()=>{ try{ await navigator.clipboard.writeText(JSON.stringify(chats,null,1)); toast('Chats copied as JSON'); }catch{ toast('Copy failed'); } };
+$('wipe').onclick=()=>{ const w=$('wipe'); if(w.dataset.sure){ chats=[]; save(); newChat(); toast('All chats deleted'); } else { w.dataset.sure=1; w.textContent='Tap again to delete'; setTimeout(()=>{ delete w.dataset.sure; w.textContent='Delete all chats'; },3000); } };
 
 /* ---------- sheets / menus ---------- */
 function closeAll(){ for(const id of ['scrim','drawer','pick','settings']) $(id).classList.remove('on'); $('plusMenu').classList.remove('on'); $('moreMenu').classList.remove('on'); }
 function open(id){ closeAll(); $('scrim').classList.add('on'); $(id).classList.add('on'); }
 $('scrim').onclick=closeAll;
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
 $('menuBtn').onclick=()=>{ paintHist(); open('drawer'); };
-$('modelBtn').onclick=()=>{ paintPicker(); open('pick'); providers.forEach(loadModels); };
-const openSettings=()=>{ $('sSys').value=settings.sys; $('sProxy').value=settings.proxy; $('sNote').textContent=''; open('settings'); };
+$('modelBtn').onclick=()=>{ query=''; $('q').value=''; paintFilters(); open('pick'); paintPicker(); providers.filter(enabled).forEach(loadModels); };
 $('setBtn').onclick=openSettings; $('dSet').onclick=openSettings; $('xSet').onclick=openSettings;
 function popMenu(menu,btn,below){
   const r=btn.getBoundingClientRect(), m=$(menu);
@@ -272,24 +512,11 @@ function popMenu(menu,btn,below){
 $('moreBtn').onclick=e=>{ e.stopPropagation(); popMenu('moreMenu',$('moreBtn'),true); };
 $('plusBtn').onclick=e=>{ e.stopPropagation(); popMenu('plusMenu',$('plusBtn'),false); };
 document.addEventListener('click',e=>{ if(!e.target.closest('.menu')){ $('plusMenu').classList.remove('on'); $('moreMenu').classList.remove('on'); } });
-$('xCopy').onclick=async()=>{ closeAll(); if(!cur) return; const t=cur.messages.map(m=>(m.role==='user'?'You: ':'AI: ')+(m.content||'')).join('\n\n'); try{await navigator.clipboard.writeText(t);toast('Chat copied')}catch{toast('Copy failed')} };
+$('xCopy').onclick=async()=>{ closeAll(); if(!cur) return; const t=cur.messages.map(m=>(m.role==='user'?'You: ':'AI: ')+(m.role==='user'?m.content:splitThink(m).text)).join('\n\n'); try{ await navigator.clipboard.writeText(t); toast('Chat copied'); }catch{ toast('Copy failed'); } };
 $('xDel').onclick=()=>{ if(!cur) return; chats=chats.filter(c=>c.id!==cur.id); save(); newChat(); toast('Chat deleted'); };
 
-$('sSys').oninput=()=>{ settings.sys=$('sSys').value; store.set('settings',settings); };
-$('sProxy').oninput=()=>{ settings.proxy=$('sProxy').value.trim(); store.set('settings',settings); for(const k in status) delete status[k]; };
-$('cAdd').onclick=()=>{
-  const base=$('cBase').value.trim(); if(!/^https?:\/\//.test(base)){ $('sNote').textContent='Enter a base URL starting with https://'; return; }
-  const c=store.get('custom',[]);
-  c.push({name:$('cName').value.trim()||'Custom',base,key:$('cKey').value.trim(),note:'custom endpoint',models:$('cModels').value.split(',').map(s=>s.trim()).filter(Boolean)});
-  store.set('custom',c); buildProviders(); $('sNote').textContent='Added. Pick it from the model menu.';
-  for(const id of ['cName','cBase','cKey','cModels']) $(id).value='';
-};
-$('cClear').onclick=()=>{ store.set('custom',[]); buildProviders(); if(!prov(sel.p)&&sel.p!=='auto'){ sel={p:'auto',m:''}; store.set('sel',sel); paintTitle(); } $('sNote').textContent='Custom providers removed.'; };
-$('unhide').onclick=()=>{ dead={}; store.set('dead',dead); $('sNote').textContent='All hidden models are back.'; paintTitle(); };
-$('wipe').onclick=()=>{ const w=$('wipe'); if(w.dataset.sure){ chats=[]; save(); newChat(); toast('All chats deleted'); } else { w.dataset.sure=1; w.textContent='Tap again to confirm'; setTimeout(()=>{delete w.dataset.sure;w.textContent='Delete all chats'},3000); } };
-
 function paintHist(){
-  $('hist').innerHTML=chats.length?chats.map(c=>`<div class="row${cur&&c.id===cur.id?' on':''}" data-id="${esc(c.id)}" role="button" tabindex="0"><span class="t">${esc(c.title||'New chat')}</span>${c.mode==='task'?'<small>Task</small>':''}<button class="icon" data-del="${esc(c.id)}" aria-label="Delete chat" style="width:36px;height:36px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`).join(''):'<p class="pnote">No chats yet</p>';
+  $('hist').innerHTML=chats.length?chats.map(c=>`<div class="row${cur&&c.id===cur.id?' on':''}" data-id="${esc(c.id)}" role="button" tabindex="0"><span class="t">${esc(c.title||'New chat')}</span>${c.mode==='task'?'<small>Task</small>':''}<button class="icon" data-del="${esc(c.id)}" aria-label="Delete chat" style="width:36px;height:36px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`).join(''):'<p class="note" style="margin:8px 12px">No chats yet</p>';
 }
 $('hist').addEventListener('click',e=>{
   const d=e.target.closest('[data-del]');
@@ -298,13 +525,11 @@ $('hist').addEventListener('click',e=>{
   if(busy) busy.abort();
   cur=chats.find(c=>c.id===r.dataset.id); render(); closeAll();
 });
-function newChat(){ if(busy) busy.abort(); cur=null; files=[]; imgMode=false; setMode('chat'); paintAttach(); render(); closeAll(); }
+function newChat(){ if(busy) busy.abort(); cur=null; files=[]; imgMode=false; setMode('chat'); render(); closeAll(); }
 $('newBtn').onclick=newChat; $('dNew').onclick=newChat;
 
-/* ---------- mode (only chosen before the first message) ---------- */
 function setMode(m){ mode=m; $('mChat').classList.toggle('on',m==='chat'); $('mTask').classList.toggle('on',m==='task'); }
-$('mChat').onclick=()=>setMode('chat');
-$('mTask').onclick=()=>setMode('task');
+$('mChat').onclick=()=>setMode('chat'); $('mTask').onclick=()=>setMode('task');
 
 /* ---------- attachments ---------- */
 $('mFile').onclick=()=>{ closeAll(); $('file').click(); };
@@ -330,7 +555,6 @@ function paintGo(){
 input.addEventListener('input',()=>{ input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,160)+'px'; paintGo(); });
 input.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!('ontouchstart' in window)){ e.preventDefault(); send(); } });
 $('goBtn').onclick=()=>{ if(busy){ busy.abort(); return; } if(input.value.trim()||files.length) send(); else dictate(); };
-
 let rec=null;
 function dictate(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -362,11 +586,11 @@ const IC={
 function render(){
   const c=$('chat'), has=cur&&cur.messages.length;
   document.body.classList.toggle('start',!has);
-  $('modes').hidden=!!has;
-  $('setBtn').hidden=!!has; $('moreBtn').hidden=!has;
+  $('modes').hidden=!!has; $('setBtn').hidden=!!has; $('moreBtn').hidden=!has;
   paintAttach();
   if(!has){
-    c.innerHTML=`<div class="empty"><div class="spark"></div><h1 class="hello">Ready when you are</h1><div class="sub">Free models · no API keys</div></div>`;
+    const hi=settings.name.trim()?`Hi ${esc(settings.name.trim())}, ready when you are`:'Ready when you are';
+    c.innerHTML=`<div class="empty"><div class="spark"></div><h1 class="hello">${hi}</h1><div class="sub">Free models · no API keys</div></div>`;
     paintGo(); return;
   }
   const banner=cur.mode==='task'?`<div class="banner"><b>Task mode</b> · The sandboxed computer (apps, browser) isn't connected yet, so the model answers on its own for now.</div>`:'';
@@ -378,18 +602,19 @@ function msgHTML(m,i){
   if(m.role==='user') return `<div class="user" data-i="${i}"><div class="bubble">${esc(m.display||m.content)}</div></div>`;
   const last=i===cur.messages.length-1, {think,text}=splitThink(m);
   const acts=m.pending?'':`<div class="acts">${text?`<button class="icon" data-act="copy" data-i="${i}" aria-label="Copy">${IC.copy}</button><button class="icon" data-act="share" data-i="${i}" aria-label="Share">${IC.share}</button><button class="icon" data-act="speak" data-i="${i}" aria-label="Read aloud">${IC.speak}</button>`:''}${last?`<button class="icon" data-act="regen" aria-label="${m.error?'Retry':'Regenerate'}">${IC.regen}</button>`:''}${m.error?`<button class="chip" data-act="switch" style="margin:4px 6px">Switch model</button>`:''}</div>`;
+  const showThink=think&&settings.think;
   return `<div class="resp" data-i="${i}">
     <div class="meta"><div class="spark sm${m.pending?' spin':''}"></div>${esc(m.via||'')}</div>
     ${m.notice?`<div class="note" style="margin-bottom:6px">${esc(m.notice)}</div>`:''}
-    ${think?`<details class="think"${m.pending&&!text?' open':''}><summary>${m.pending&&!text?'Thinking…':'Show thinking'}</summary><div class="md">${md(think)}</div></details>`:''}
+    ${showThink?`<details class="think"${m.pending&&!text?' open':''}><summary>${m.pending&&!text?'Thinking…':'Show thinking'}</summary><div class="md">${md(think)}</div></details>`:''}
     ${m.image?`<img class="genimg" src="${esc(m.image)}" alt="${esc(m.alt||'Generated image')}">`:''}
-    <div class="md">${text?md(text):(m.pending&&!think&&!m.image?'<span class="note">Working on it…</span>':'')}</div>
+    <div class="md">${text?md(text):(m.pending&&!m.image?`<span class="note">${think&&!settings.think?'Thinking…':esc(m.status||'Working on it…')}</span>`:'')}</div>
     ${m.error?`<div class="err">${esc(m.error)}</div>`:''}
     ${acts}
   </div>`;
 }
 function paintMsg(i){
-  const c=$('chat'), el=c.querySelector(`[data-i="${i}"]`);
+  const c=$('chat'), el=c.querySelector(`.resp[data-i="${i}"],.user[data-i="${i}"]`);
   const near=c.scrollHeight-c.scrollTop-c.clientHeight<160;
   const tmp=document.createElement('div'); tmp.innerHTML=msgHTML(cur.messages[i],i);
   if(el) el.replaceWith(tmp.firstElementChild); else $('tail').before(tmp.firstElementChild);
@@ -401,7 +626,7 @@ $('chat').addEventListener('click',async e=>{
   const a=b.dataset.act, m=cur&&cur.messages[+b.dataset.i];
   if(a==='copy'){ try{ await navigator.clipboard.writeText(splitThink(m).text); toast('Copied'); }catch{ toast('Copy failed'); } }
   else if(a==='share'){ const t=splitThink(m).text; if(navigator.share){ try{ await navigator.share({text:t}); }catch{} } else { try{ await navigator.clipboard.writeText(t); toast('Copied to share'); }catch{} } }
-  else if(a==='speak'){ if(!window.speechSynthesis){ toast('Read aloud is not supported here'); return; } if(speechSynthesis.speaking){ speechSynthesis.cancel(); return; } const plain=splitThink(m).text.replace(/```[\s\S]*?```/g,' code block ').replace(/[#*_`>|-]/g,' '); speechSynthesis.speak(new SpeechSynthesisUtterance(plain)); }
+  else if(a==='speak'){ if(!window.speechSynthesis){ toast('Read aloud is not supported here'); return; } if(speechSynthesis.speaking){ speechSynthesis.cancel(); return; } speechSynthesis.speak(new SpeechSynthesisUtterance(splitThink(m).text.replace(/```[\s\S]*?```/g,' code block ').replace(/[#*_`>|]/g,' '))); }
   else if(a==='regen'){ if(busy) return; cur.messages.pop(); render(); run(); }
   else if(a==='switch'){ $('modelBtn').click(); }
 });
@@ -414,15 +639,13 @@ function send(){
   if(!cur){ cur={id:Date.now().toString(36),title:'',mode,messages:[]}; chats.unshift(cur); }
   let content=text;
   for(const f of files) content+=`\n\n[File: ${f.name}]\n\`\`\`\n${f.text}\n\`\`\``;
-  const display=text+(files.length?`\n📎 ${files.map(f=>f.name).join(', ')}`:'');
-  cur.messages.push({role:'user',content,display});
+  cur.messages.push({role:'user',content,display:text+(files.length?`\n📎 ${files.map(f=>f.name).join(', ')}`:'')});
   if(!cur.title) cur.title=(text||files[0].name).slice(0,60);
   input.value=''; input.style.height='auto'; files=[];
   const wantImg=imgMode; imgMode=false;
   render(); save();
   if(wantImg) makeImage(text); else run();
 }
-
 function makeImage(prompt){
   const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random()*1e9)}`;
   const m={role:'assistant',content:'',image:url,alt:prompt,via:'Pollinations · image',pending:true,noapi:true};
@@ -432,18 +655,19 @@ function makeImage(prompt){
   img.onerror=()=>{ m.pending=false; m.image=''; m.error='The image service is busy or rate-limited. Wait about 15 seconds and retry.'; paintMsg(i); save(); };
   img.src=url;
 }
-
 function apiMessages(){
   const hist=cur.messages.filter(m=>!m.noapi&&!m.error&&!m.pending&&m.content).map(m=>({role:m.role,content:m.role==='assistant'?splitThink(m).text:m.content}));
-  return [...(settings.sys?[{role:'system',content:settings.sys}]:[]), ...hist.slice(-30)];
+  const sys=systemPrompt();
+  return [...(sys?[{role:'system',content:sys}]:[]),...hist.slice(-30)];
 }
 function candidates(){
-  if(sel.p!=='auto'){
-    const p=prov(sel.p); if(!p) return [];
-    const ms=live(p), first=sel.m&&!isDead(p.id,sel.m)?sel.m:ms[0];
-    return [first,...ms.filter(x=>x!==first)].filter(Boolean).slice(0,4).map(m=>[p,m]);
-  }
-  return AUTO_ORDER.map(prov).filter(Boolean).flatMap(p=>live(p).slice(0,2).map(m=>[p,m]));
+  const autoList=()=>AUTO_ORDER.map(prov).filter(p=>p&&enabled(p)).flatMap(p=>live(p).slice(0,2).map(m=>[p,m]));
+  if(sel.p==='auto') return autoList();
+  const p=prov(sel.p); if(!p) return autoList();
+  const ms=live(p), first=sel.m&&!isDead(p.id,sel.m)?sel.m:ms[0];
+  let list=[first,...(settings.fall?ms.filter(x=>x!==first).slice(0,3):[])].filter(Boolean).map(m=>[p,m]);
+  if(settings.fall) list=[...list,...autoList().filter(([q])=>q.id!==p.id).slice(0,4)];
+  return list;
 }
 
 async function run(){
@@ -454,66 +678,73 @@ async function run(){
   let raf=0; const tick=()=>{ if(!raf) raf=requestAnimationFrame(()=>{ raf=0; paintMsg(idx); }); };
   let ok=false;
   for(const [p,model] of list){
-    m.via=`${p.name} · ${model}`; m.content=''; m.reasoning=''; tick();
+    if(busy.signal.aborted) break;
+    m.via=`${p.name} · ${pretty(model)}`; m.content=''; m.reasoning=''; m.status=p.id==='horde'?'Waiting for a volunteer GPU…':'Working on it…'; tick();
+    const att=new AbortController(), onAbort=()=>att.abort(); busy.signal.addEventListener('abort',onAbort);
+    let first=false, timedOut=false; const t0=performance.now();
+    const timer=setTimeout(()=>{ if(!first){ timedOut=true; att.abort(); } },(p.timeout||45)*1000);
     try{
-      const onDelta=(c,r)=>{ if(c) m.content+=c; if(r) m.reasoning+=r; tick(); };
-      if(p.type==='puter') await callPuter(model,msgs,onDelta);
-      else await callOpenAI(p,model,msgs,onDelta,busy.signal);
+      const onDelta=(c,r)=>{ if((c||r)&&!first){ first=true; stat(p.id,model,{ms:performance.now()-t0}); } if(c) m.content+=c; if(r) m.reasoning+=r; tick(); };
+      await raceAbort(callModel(p,model,msgs,onDelta,att.signal,false),att.signal);
       if(!m.content.trim()&&!m.reasoning.trim()) throw Object.assign(new Error('returned an empty reply'),{empty:true});
       ok=true;
-      if(sel.p!=='auto'&&model!==wanted){ m.notice=`${wanted} didn't respond, so ${model} answered instead.`; sel.m=model; store.set('sel',sel); paintTitle(); }
+      if(sel.p!=='auto'&&(p.id!==sel.p||model!==wanted)) m.notice=`${pretty(wanted)} didn't respond, so ${p.name} · ${pretty(model)} answered instead.`;
       break;
     }catch(err){
       if(busy.signal.aborted){ ok=true; if(!m.content) m.error='Stopped.'; break; }
       if(m.content){ ok=true; break; }
-      if(modelGone(err)) markDead(p.id,model);
-      errors.push(`${p.name} · ${model}: ${explain(err)}`);
-    }
+      if(timedOut){ errors.push(`${p.name} · ${pretty(model)}: no reply in ${p.timeout||45}s`); continue; }
+      if(modelGone(err)) markDead(p.id,model); else if(err.status===429) stat(p.id,model,{rl:1});
+      errors.push(`${p.name} · ${pretty(model)}: ${explain(err)}`);
+    }finally{ clearTimeout(timer); busy.signal.removeEventListener('abort',onAbort); }
   }
-  if(!list.length) m.error='No working models left here. Pick another provider, or Settings → Unhide all models.';
-  else if(!ok){ m.error=errors.join('\n'); m.via=''; paintTitle(); }
-  m.pending=false; busy=null; cancelAnimationFrame(raf); paintMsg(idx); paintGo(); save();
+  if(!list.length) m.error='No working models right now. Open the model menu, or Settings → Unhide failed models.';
+  else if(!ok){ m.error=errors.join('\n'); m.via=''; }
+  m.pending=false; m.status=''; busy=null; cancelAnimationFrame(raf); paintMsg(idx); paintGo(); paintTitle(); save();
 }
 
 function errMessage(e){
-  if(!e||!e.body) return '';
-  try{ const j=JSON.parse(e.body); return String(j.error?.message||j.message||(typeof j.error==='string'?j.error:'')||'').slice(0,160); }catch{ return e.body.replace(/<[^>]+>/g,' ').trim().slice(0,160); }
+  if(!e||!e.body) return e&&e.message&&!/^HTTP/.test(e.message)?e.message:'';
+  try{ const j=JSON.parse(e.body); return String(j.error?.message||j.message||j.detail||(typeof j.error==='string'?j.error:'')||'').slice(0,160); }catch{ return e.body.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,160); }
 }
 function modelGone(e){
   if(!e) return false;
   if(e.empty) return true;
-  const s=e.status, msg=(errMessage(e)+' '+(e.body||'')).toLowerCase();
+  const s=e.status, msg=(errMessage(e)+' '+(e.body||'')+' '+(e.message||'')).toLowerCase();
   if(s===404||s===410) return true;
-  if((s===400||s===422||s===403||s===401)&&/model|unavailable|not found|does not exist|not supported|deprecat|tier|access/.test(msg)) return true;
+  if((s===400||s===422||s===403||s===401)&&/model|unavailable|not found|does not exist|not supported|deprecat|tier|access|token|key/.test(msg)) return true;
+  if(!s&&/model.*(not found|unavailable|not supported|does not exist)|no provider/.test(msg)) return true;
   return false;
 }
 function explain(e){
-  if(e&&e.status){
-    const msg=errMessage(e);
-    if(e.status===429) return 'rate limited — wait a moment';
-    return `${msg||'HTTP '+e.status}${modelGone(e)?' (hidden from the list)':''}`;
-  }
-  if(e&&e.empty) return 'returned an empty reply (hidden from the list)';
+  if(e&&e.status){ if(e.status===429) return 'rate limited — wait a moment'; const msg=errMessage(e); return `${msg||'HTTP '+e.status}${modelGone(e)?' (hidden for 24h)':''}`; }
+  if(e&&e.empty) return 'empty reply (hidden for 24h)';
   if(e instanceof TypeError) return 'blocked by the browser (CORS) or offline';
-  return e&&e.message?e.message:String(e);
+  return (e&&e.message?e.message:String(e)).slice(0,160)+(modelGone(e)?' (hidden for 24h)':'');
 }
 
-async function callOpenAI(p,model,messages,onDelta,signal,extra){
+/* ---------- transports ---------- */
+function raceAbort(pr,signal){ return new Promise((ok,bad)=>{ if(signal.aborted) return bad(new DOMException('aborted','AbortError')); const f=()=>bad(new DOMException('aborted','AbortError')); signal.addEventListener('abort',f,{once:true}); pr.then(v=>{signal.removeEventListener('abort',f);ok(v)},e=>{signal.removeEventListener('abort',f);bad(e)}); }); }
+function callModel(p,model,messages,onDelta,signal,probe){
+  if(p.type==='puter') return callPuter(model,messages,onDelta,signal);
+  if(p.type==='g4f') return callG4F(model,messages,onDelta,signal,probe);
+  return callOpenAI(p,model,messages,onDelta,signal,probe);
+}
+async function callOpenAI(p,model,messages,onDelta,signal,probe){
   const url=p.chat||(p.base.replace(/\/$/,'')+'/chat/completions');
   const headers={'Content-Type':'application/json'};
   if(p.key) headers.Authorization='Bearer '+p.key;
-  const opts={method:'POST',headers,body:JSON.stringify({model,messages,stream:!extra,...(extra||{})})};
+  const body=probe?{model,messages,max_tokens:8,stream:false}:{model,messages,stream:true,temperature:settings.temp};
+  const opts={method:'POST',headers,body:JSON.stringify(body)};
   let res;
   try{ res=await fetch(proxied(url),signal?{...opts,signal}:opts); }
   catch(e){ if(e&&(e.name==='DataCloneError'||/clone/i.test(e.message))) res=await fetch(proxied(url),opts); else throw e; }
-  if(!res.ok){ let body=''; try{ body=await res.text(); }catch{} throw Object.assign(new Error('HTTP '+res.status),{status:res.status,body}); }
+  if(!res.ok){ let b=''; try{ b=await res.text(); }catch{} throw Object.assign(new Error('HTTP '+res.status),{status:res.status,body:b}); }
   const ct=res.headers.get('content-type')||'';
   if(!ct.includes('event-stream')||!res.body){
-    const txt=await res.text();
-    let c='',r='';
-    try{ const j=JSON.parse(txt), mm=j.choices?.[0]?.message||{}; c=mm.content||''; r=mm.reasoning_content||mm.reasoning||''; if(j.error) throw Object.assign(new Error('error'),{status:400,body:txt}); }
-    catch(er){ if(er.status) throw er; c=txt; }
-    if(extra&&!c&&!r&&!/choices/.test(txt)) throw Object.assign(new Error('empty'),{empty:true});
+    const txt=await res.text(); let c='',r='';
+    try{ const j=JSON.parse(txt); if(j.error) throw Object.assign(new Error('error'),{status:400,body:txt}); const mm=j.choices?.[0]?.message||{}; c=mm.content||''; r=mm.reasoning_content||mm.reasoning||''; if(probe&&!j.choices) throw Object.assign(new Error('empty'),{empty:true}); }
+    catch(er){ if(er.status||er.empty) throw er; c=txt; }
     onDelta(c,r); return;
   }
   const reader=res.body.getReader(), dec=new TextDecoder(); let buf='';
@@ -527,25 +758,31 @@ async function callOpenAI(p,model,messages,onDelta,signal,extra){
       let j; try{ j=JSON.parse(d); }catch{ continue; }
       if(j.error) throw Object.assign(new Error('stream error'),{status:400,body:d});
       const dl=j.choices?.[0]?.delta||{};
-      onDelta(dl.content||'', dl.reasoning_content||dl.reasoning||'');
+      onDelta(dl.content||'',dl.reasoning_content||dl.reasoning||'');
     }
   }
 }
-
-let puterReady=null;
-function loadPuter(){
-  if(window.puter) return Promise.resolve();
-  return puterReady||=new Promise((ok,bad)=>{ const s=document.createElement('script'); s.src='https://js.puter.com/v2/'; s.onload=ok; s.onerror=()=>{ puterReady=null; bad(new Error('could not load Puter.js')); }; document.head.appendChild(s); });
+let g4fP=null;
+function g4fClient(){ return g4fP||=import('https://g4f.dev/dist/js/client.js').then(mod=>new (mod.default||mod.Client)()).catch(e=>{ g4fP=null; throw new Error('could not load the GPT4Free client'); }); }
+async function callG4F(model,messages,onDelta,signal,probe){
+  const c=await g4fClient();
+  const req={model,messages,stream:!probe}; if(!probe) req.temperature=settings.temp;
+  const r=await c.chat.completions.create(req);
+  if(r&&typeof r[Symbol.asyncIterator]==='function'){
+    for await(const ch of r){ if(signal&&signal.aborted) throw new DOMException('aborted','AbortError'); const d=ch?.choices?.[0]?.delta||{}; onDelta(d.content||'',d.reasoning_content||d.reasoning||''); }
+  } else { const mm=r?.choices?.[0]?.message||{}; if(!mm.content&&!mm.reasoning_content) throw Object.assign(new Error('empty'),{empty:true}); onDelta(mm.content||'',mm.reasoning_content||''); }
 }
-async function callPuter(model,messages,onDelta){
+let puterP=null;
+function loadPuter(){ if(window.puter) return Promise.resolve(); return puterP||=new Promise((ok,bad)=>{ const s=document.createElement('script'); s.src='https://js.puter.com/v2/'; s.onload=ok; s.onerror=()=>{ puterP=null; bad(new Error('could not load Puter.js')); }; document.head.appendChild(s); }); }
+async function callPuter(model,messages,onDelta,signal){
   await loadPuter();
   const r=await puter.ai.chat(messages,{model,stream:true});
-  if(r&&typeof r[Symbol.asyncIterator]==='function'){ for await(const part of r){ if(busy?.signal.aborted) break; onDelta(part?.text||'',part?.reasoning||''); } }
+  if(r&&typeof r[Symbol.asyncIterator]==='function'){ for await(const part of r){ if(signal&&signal.aborted) break; onDelta(part?.text||'',part?.reasoning||''); } }
   else onDelta(typeof r==='string'?r:(r?.message?.content?.[0]?.text||r?.message?.content||String(r)),'');
 }
 
-paintTitle(); render();
-providers.forEach(loadModels);
+paintAvatar(); paintTitle(); render();
+providers.filter(p=>enabled(p)&&p.type!=='g4f').forEach(loadModels);
 }
 </script>
 </body>

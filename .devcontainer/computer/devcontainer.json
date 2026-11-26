@@ -1,0 +1,14 @@
+{
+  "name": "Free AI Computer",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": { "version": "lts" }
+  },
+  "hostRequirements": { "cpus": 2 },
+  "forwardPorts": [8787],
+  "portsAttributes": { "8787": { "label": "Free AI computer", "onAutoForward": "silent" } },
+  "postCreateCommand": "bash .devcontainer/computer/setup.sh",
+  "postStartCommand": "bash .devcontainer/computer/start.sh",
+  "customizations": { "codespaces": { "openFiles": [".devcontainer/computer/README.md"] } }
+}

@@ -308,7 +308,7 @@ const PRESETS={
   creative:{t:'Creative',d:'Vivid and playful',p:'You are an imaginative creative partner. Offer vivid, original ideas, vary your style, and build on what the user gives you.'},
   custom:{t:'Custom',d:'Your own instructions',p:''},
 };
-const DEF={name:'',about:'',preset:'default',custom:'',len:'balanced',temp:0.7,think:true,fall:true,proxy:'',off:{},favs:[],stats:{}};
+const DEF={name:'',about:'',preset:'default',custom:'',len:'balanced',temp:0.7,think:true,fall:true,proxy:'',off:{},favs:[],stats:{},img:'pollinations'};
 const settings=Object.assign({},DEF,store.get('settings2',{}));
 if(!PRESETS[settings.preset]) settings.preset='default';
 let saveT=0;
@@ -338,7 +338,7 @@ function stat(p,m,v){ settings.stats[dkey(p,m)]={...v,t:Date.now()}; store.set('
 let chats=store.get('chats',[]);
 let cur=null, sel=store.get('sel',{p:'auto',m:''}), mode='chat', busy=null, imgMode=false, files=[];
 if(sel.p!=='auto'&&!prov(sel.p)) sel={p:'auto',m:''};
-const save=()=>store.set('chats',chats.slice(0,80));
+const save=()=>{ try{ localStorage.setItem('fac_chats',JSON.stringify(chats.slice(0,80),(k,v)=>k==='image'&&typeof v==='string'&&v.startsWith('data:')&&v.length>120000?'':v)); }catch{} };
 
 function paintTitle(){
   const p=prov(sel.p);
@@ -536,10 +536,11 @@ $('mFile').onclick=()=>{ closeAll(); $('file').click(); };
 $('file').onchange=async()=>{ for(const f of $('file').files){ if(f.size>400000){ toast(f.name+' is too large'); continue; } files.push({name:f.name,text:await f.text()}); } $('file').value=''; paintAttach(); paintGo(); };
 $('mImg').onclick=()=>{ closeAll(); imgMode=!imgMode; paintAttach(); $('input').focus(); };
 function paintAttach(){
-  $('attach').innerHTML=(imgMode?'<button class="chip" data-x="img">Create image ✕</button>':'')+files.map((f,i)=>`<button class="chip" data-x="${i}">${esc(f.name)} ✕</button>`).join('');
+  const ip=IMG[settings.img]?settings.img:'pollinations';
+  $('attach').innerHTML=(imgMode?'<button class="chip on" data-x="img">Image ✕</button>'+Object.entries(IMG).map(([k,v])=>`<button class="chip${ip===k?' on':''}" data-ip="${k}" title="${esc(v.note)}">${v.name}</button>`).join(''):'')+files.map((f,i)=>`<button class="chip" data-x="${i}">${esc(f.name)} ✕</button>`).join('');
   $('input').placeholder=imgMode?'Describe an image':(cur&&cur.messages.length?"What's next?":'Ask Free AI');
 }
-$('attach').addEventListener('click',e=>{ const b=e.target.closest('[data-x]'); if(!b) return; if(b.dataset.x==='img') imgMode=false; else files.splice(+b.dataset.x,1); paintAttach(); paintGo(); });
+$('attach').addEventListener('click',e=>{ const ipb=e.target.closest('[data-ip]'); if(ipb){ settings.img=ipb.dataset.ip; store.set('settings2',settings); paintAttach(); toast(IMG[settings.img].note); return; } const b=e.target.closest('[data-x]'); if(!b) return; if(b.dataset.x==='img') imgMode=false; else files.splice(+b.dataset.x,1); paintAttach(); paintGo(); });
 
 /* ---------- input ---------- */
 const input=$('input');
@@ -627,7 +628,7 @@ $('chat').addEventListener('click',async e=>{
   if(a==='copy'){ try{ await navigator.clipboard.writeText(splitThink(m).text); toast('Copied'); }catch{ toast('Copy failed'); } }
   else if(a==='share'){ const t=splitThink(m).text; if(navigator.share){ try{ await navigator.share({text:t}); }catch{} } else { try{ await navigator.clipboard.writeText(t); toast('Copied to share'); }catch{} } }
   else if(a==='speak'){ if(!window.speechSynthesis){ toast('Read aloud is not supported here'); return; } if(speechSynthesis.speaking){ speechSynthesis.cancel(); return; } speechSynthesis.speak(new SpeechSynthesisUtterance(splitThink(m).text.replace(/```[\s\S]*?```/g,' code block ').replace(/[#*_`>|]/g,' '))); }
-  else if(a==='regen'){ if(busy) return; cur.messages.pop(); render(); run(); }
+  else if(a==='regen'){ if(busy) return; const last=cur.messages.pop(); render(); if(last&&last.imgPrompt) makeImage(last.imgPrompt,last.imgProv); else run(); }
   else if(a==='switch'){ $('modelBtn').click(); }
 });
 
@@ -644,16 +645,69 @@ function send(){
   input.value=''; input.style.height='auto'; files=[];
   const wantImg=imgMode; imgMode=false;
   render(); save();
-  if(wantImg) makeImage(text); else run();
+  if(wantImg) makeImage(text,settings.img); else run();
 }
-function makeImage(prompt){
-  const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random()*1e9)}`;
-  const m={role:'assistant',content:'',image:url,alt:prompt,via:'Pollinations · image',pending:true,noapi:true};
-  cur.messages.push(m); const i=cur.messages.length-1; paintMsg(i);
-  const img=new Image();
-  img.onload=()=>{ m.pending=false; paintMsg(i); save(); };
-  img.onerror=()=>{ m.pending=false; m.image=''; m.error='The image service is busy or rate-limited. Wait about 15 seconds and retry.'; paintMsg(i); save(); };
-  img.src=url;
+const IMG={
+  pollinations:{name:'Pollinations',note:'Fast · about 1 image per 15 seconds'},
+  horde:{name:'AI Horde',note:'Stable Diffusion on volunteer GPUs · can queue for a minute or more'},
+  puter:{name:'Puter',note:'GPT Image, Flux and more · asks you to sign in to a free Puter account'},
+};
+async function makeImage(prompt,provId){
+  const pid=IMG[provId]?provId:(IMG[settings.img]?settings.img:'pollinations');
+  const m={role:'assistant',content:'',image:'',alt:prompt,via:`${IMG[pid].name} · image`,pending:true,noapi:true,imgPrompt:prompt,imgProv:pid,status:'Creating your image…'};
+  cur.messages.push(m); const i=cur.messages.length-1;
+  busy=new AbortController(); const sig=busy.signal; paintMsg(i); paintGo();
+  try{
+    if(pid==='pollinations') m.image=await imgPollinations(prompt,sig);
+    else if(pid==='horde') m.image=await imgHorde(prompt,sig,t=>{ m.status=t; paintMsg(i); });
+    else m.image=await imgPuter(prompt,sig);
+  }catch(e){
+    m.image='';
+    m.error=sig.aborted?'Stopped.':`${IMG[pid].name}: ${e&&e.message?e.message:e}. Try again, or switch generator with the chips above the input.`;
+  }
+  m.pending=false; m.status=''; busy=null; paintMsg(i); paintGo(); save();
+}
+function imgPollinations(prompt,sig){
+  return new Promise((ok,bad)=>{
+    const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random()*1e9)}`;
+    const img=new Image(); img.onload=()=>ok(url); img.onerror=()=>bad(new Error('busy or rate-limited — wait about 15 seconds'));
+    sig.addEventListener('abort',()=>{ img.src=''; bad(new Error('stopped')); },{once:true});
+    img.src=url;
+  });
+}
+const HORDE='https://aihorde.net/api/v2', HH={'Content-Type':'application/json',apikey:'0000000000','Client-Agent':'FreeAIChat:1.0:spencie.me'};
+async function imgHorde(prompt,sig,onStatus){
+  const r=await fetch(HORDE+'/generate/async',{method:'POST',headers:HH,signal:sig,body:JSON.stringify({
+    prompt,nsfw:false,censor_nsfw:true,r2:true,shared:false,
+    params:{width:512,height:512,steps:20,n:1,cfg_scale:7,sampler_name:'k_euler_a'}})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.id) throw new Error(j.message||('HTTP '+r.status));
+  const id=j.id, t0=Date.now();
+  const cancel=()=>fetch(HORDE+'/generate/status/'+id,{method:'DELETE',headers:HH}).catch(()=>{});
+  sig.addEventListener('abort',cancel,{once:true});
+  for(;;){
+    if(sig.aborted) throw new Error('stopped');
+    if(Date.now()-t0>6*60e3){ cancel(); throw new Error('no volunteer picked it up within 6 minutes'); }
+    await new Promise(res=>setTimeout(res,3000));
+    const c=await (await fetch(HORDE+'/generate/check/'+id,{headers:HH,signal:sig})).json();
+    if(c.faulted) throw new Error('the worker failed on this prompt');
+    if(c.is_possible===false) throw new Error('no worker can run this request right now');
+    if(c.done) break;
+    const q=c.queue_position, w=c.wait_time;
+    onStatus(c.processing?`Painting… about ${Math.max(1,w|0)}s left`:`In the volunteer queue${q?` · position ${q}`:''}${w?` · about ${w}s`:''}`);
+  }
+  const st=await (await fetch(HORDE+'/generate/status/'+id,{headers:HH,signal:sig})).json();
+  const g=st.generations&&st.generations[0];
+  if(!g||!g.img) throw new Error('finished without an image');
+  if(g.censored) throw new Error('the image was filtered by the volunteer worker');
+  return /^https?:/.test(g.img)?g.img:'data:image/webp;base64,'+g.img;
+}
+async function imgPuter(prompt,sig){
+  await loadPuter();
+  const el=await raceAbort(puter.ai.txt2img(prompt),sig);
+  const src=el&&(el.src||el.url||(typeof el==='string'?el:''));
+  if(!src) throw new Error('returned no image');
+  return src;
 }
 function apiMessages(){
   const hist=cur.messages.filter(m=>!m.noapi&&!m.error&&!m.pending&&m.content).map(m=>({role:m.role,content:m.role==='assistant'?splitThink(m).text:m.content}));

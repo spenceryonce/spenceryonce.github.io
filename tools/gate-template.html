@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Free AI Chat</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#000;color:#e3e3e3;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Google Sans","Segoe UI",Roboto,system-ui,sans-serif}
+body{background:radial-gradient(120% 55% at 50% 105%,#2443b8 0%,#142774 28%,#070b24 55%,#000 78%);display:grid;place-items:center;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom)}
+.wrap{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
+.spark{width:60px;height:60px;background:conic-gradient(from 210deg,#4285f4,#9b72cb,#d96570,#f6c026,#34a853,#4285f4);-webkit-mask:var(--s) center/contain no-repeat;mask:var(--s) center/contain no-repeat;--s:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.6 17.4 12 24 12 17.4 12 12 17.4 12 24 12 17.4 6.6 12 0 12 6.6 12 12 6.6 12 0Z'/%3E%3C/svg%3E")}
+.spin{animation:spin 1.2s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+h1{margin:0;font-size:34px;font-weight:400;line-height:1.1}
+p{margin:-6px 0 6px;color:#9aa0a6;font-size:15px}
+form{width:100%;display:flex;flex-direction:column;gap:12px}
+.field{display:flex;align-items:center;background:#2f3033;border-radius:30px;padding:6px 6px 6px 20px;border:1.5px solid transparent;transition:border-color .15s}
+.field:focus-within{border-color:#8ab4f8}
+.field.bad{border-color:#f28b82;animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+input[type=password],input[type=text]{flex:1;min-width:0;background:none;border:0;outline:0;color:inherit;font:inherit;font-size:18px;padding:10px 0}
+.eye{width:44px;height:44px;border:0;background:none;color:#9aa0a6;border-radius:50%;display:grid;place-items:center;cursor:pointer}
+.go{width:52px;height:52px;border-radius:50%;border:0;background:#c2d7ff;color:#0b1a4a;display:grid;place-items:center;cursor:pointer;flex:none}
+.go:disabled{opacity:.5}
+label.rem{display:flex;align-items:center;justify-content:center;gap:10px;color:#c4c7c5;font-size:15px;cursor:pointer}
+label.rem input{width:20px;height:20px;accent-color:#8ab4f8}
+.err{color:#f28b82;font-size:14px;min-height:20px}
+:focus-visible{outline:2px solid #8ab4f8;outline-offset:2px}
+</style>
+</head>
+<body>
+<main class="wrap" id="gate" hidden>
+  <div class="spark" id="sp"></div>
+  <h1>Free AI</h1>
+  <p>This site is private. Enter your passphrase.</p>
+  <form id="f" autocomplete="on">
+    <input type="text" name="username" value="spencer" autocomplete="username" hidden>
+    <div class="field" id="fld">
+      <input type="password" id="pw" name="password" placeholder="Passphrase" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required aria-label="Passphrase">
+      <button type="button" class="eye" id="eye" aria-label="Show passphrase"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button class="go" id="go" aria-label="Unlock"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+    <label class="rem"><input type="checkbox" id="rem" checked> Remember this device</label>
+    <div class="err" id="err" role="alert"></div>
+  </form>
+</main>
+<script>
+(()=>{
+const PAYLOAD=/*PAYLOAD*/null;
+const $=id=>document.getElementById(id);
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const b64=u=>btoa(String.fromCharCode(...new Uint8Array(u)));
+const KEY='fac_gate';
+async function derive(pass){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:unb64(PAYLOAD.salt),iterations:PAYLOAD.iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},true,['decrypt']);
+}
+async function open(key){
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(PAYLOAD.iv)},key,unb64(PAYLOAD.ct));
+  return new TextDecoder().decode(pt);
+}
+function show(html){ document.open(); document.write(html); document.close(); }
+async function tryRemembered(){
+  let saved; try{ saved=JSON.parse(localStorage.getItem(KEY)||'null'); }catch{}
+  if(!saved||saved.salt!==PAYLOAD.salt) return false;
+  try{
+    const key=await crypto.subtle.importKey('raw',unb64(saved.k),{name:'AES-GCM'},false,['decrypt']);
+    show(await open(key)); return true;
+  }catch{ try{ localStorage.removeItem(KEY); }catch{} return false; }
+}
+$('eye').onclick=()=>{ const t=$('pw').type==='password'; $('pw').type=t?'text':'password'; $('eye').setAttribute('aria-label',t?'Hide passphrase':'Show passphrase'); };
+$('f').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const pass=$('pw').value; if(!pass) return;
+  $('go').disabled=true; $('sp').classList.add('spin'); $('err').textContent=''; $('fld').classList.remove('bad');
+  try{
+    const key=await derive(pass);
+    const html=await open(key);
+    if($('rem').checked){ try{ localStorage.setItem(KEY,JSON.stringify({salt:PAYLOAD.salt,k:b64(await crypto.subtle.exportKey('raw',key))})); }catch{} }
+    show(html);
+  }catch{
+    $('go').disabled=false; $('sp').classList.remove('spin');
+    $('err').textContent='That passphrase didn’t work.';
+    void $('fld').offsetWidth; $('fld').classList.add('bad'); $('pw').select();
+  }
+});
+if(!window.crypto||!crypto.subtle){ $('gate').hidden=false; $('err').textContent='This browser can’t unlock the site (needs HTTPS and Web Crypto).'; return; }
+tryRemembered().then(ok=>{ if(!ok){ $('gate').hidden=false; setTimeout(()=>$('pw').focus(),100); } });
+})();
+</script>
+</body>
+</html>
